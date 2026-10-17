@@ -3,53 +3,41 @@
 **Project:** BRIGHT Education Management System (BEMS)  
 **Document:** Technical specification for MVP planning  
 **Version:** 0.1  
-**Status:** Proposed — confirm business decisions before implementation  
+**Status:** Stack direction selected — confirm remaining business decisions before implementation  
 **Context:** Kenya-first, with support for international curricula
 
 ---
 
 ## 1. Executive recommendation
 
-Build BEMS first as a **responsive, installable Progressive Web App (PWA)** that supports one reliable end-to-end journey:
+Build BEMS first as a responsive, installable Progressive Web App (PWA) supporting one reliable end-to-end journey: learner registration, tutor/course discovery, lesson booking, payment if enabled, lesson attendance, tutor follow-up and learning history.
 
-1. A learner registers and signs in.
-2. The learner discovers an approved tutor or course.
-3. The learner requests or books an available lesson.
-4. The learner pays, if paid bookings are enabled.
-5. The learner attends the lesson using an established video service.
-6. The tutor records attendance and provides follow-up material or feedback.
-7. The learner can review the booking and learning history.
+The first release should be a **tutoring marketplace with essential learning features**, not a full school ERP or custom video-conferencing system.
 
-The first release should be a **tutoring marketplace with essential learning features**, not a full school ERP and not a custom video-conferencing system.
+### Confirmed stack direction
 
-### Recommended stack
+Use **Next.js + TypeScript + PostgreSQL**, with Supabase providing managed PostgreSQL, authentication and private file storage, and Vercel as the initial hosting option. This keeps the application in the JavaScript/TypeScript ecosystem and reduces the number of services Jo must configure and maintain.
 
 | Layer | Recommendation | Why |
 |---|---|---|
-| Frontend | React + TypeScript, using Laravel's Inertia integration | Interactive, maintainable UI without needing a separately deployed frontend application |
-| Backend | Laravel (current supported stable release) with PHP (current supported version) | Authentication, validation, authorization policies, queues, notifications, file storage and scheduled tasks in one mature framework |
+| Full-stack framework | Next.js App Router + TypeScript | One TypeScript codebase for UI and server-side logic |
 | UI styling | Tailwind CSS | Responsive layouts and consistent design tokens |
-| Database | PostgreSQL (managed service preferred) | Reliable relational data, transactions, constraints and reporting |
-| Database access | Laravel Eloquent ORM + versioned migrations | Keeps data access and schema changes within the backend |
-| PWA | Web app manifest + service worker; Vite PWA integration where compatible with the selected Laravel/Vite setup | Installability, app-shell caching and offline fallback |
-| Authentication | Laravel authentication scaffolding; secure session-based authentication | Avoids custom password/session implementation |
-| Authorization | Laravel policies/gates and server-side role/permission checks | Protects every restricted operation on the server |
-| File storage | Private S3-compatible object storage, or a compatible managed storage service | Separates uploads from the application server and supports private files |
-| Payments | Safaricom M-Pesa Daraja API through a server-side integration | Kenya-first payment workflow; provider onboarding and production access required |
-| Online lessons | Integrate an existing meeting provider (e.g. Google Meet or Zoom, subject to client choice) | Avoids building and operating video infrastructure |
+| Database | Supabase-managed PostgreSQL | Reliable relational data without running a database server locally |
+| Database access | Supabase JavaScript client + versioned SQL migrations | Direct integration with managed PostgreSQL; add an ORM only if needed |
+| Authentication | Supabase Auth | Avoids writing password and session infrastructure from scratch |
+| Authorization | Server-side permission checks and PostgreSQL Row Level Security (RLS) where appropriate | Protects restricted records beyond the UI |
+| PWA | Web app manifest + service worker; validate a Next.js-compatible PWA integration before adopting it | Installability, app-shell caching and offline fallback |
+| File storage | Supabase private Storage buckets initially | Simple setup while keeping sensitive uploads private |
+| Payments | Safaricom M-Pesa Daraja API through server-side route handlers | Kenya-first payment workflow; provider onboarding required |
+| Online lessons | One existing meeting provider, such as Google Meet or Zoom, subject to client choice | Avoids custom video infrastructure |
 | Email | Transactional email provider selected by the client | Verification, booking messages and password recovery |
-| SMS | Defer unless required for launch; choose a Kenyan-supported provider | Adds cost and operational complexity |
-| Background jobs | Laravel queue worker; database queue for a small pilot or Redis when justified | Reliable reminders, email delivery and slow tasks |
-| Scheduler | Laravel scheduler / cron | Booking reminders, expiry tasks and routine cleanup |
-| Testing | Pest or PHPUnit for backend; Vitest and React Testing Library for frontend; Playwright for critical end-to-end flows | Unit, integration and browser-level confidence |
-| Version control | Git + private GitHub repository | History, reviews, issue tracking and collaboration |
-| CI/CD | GitHub Actions or hosting-provider deployment pipeline | Automated checks and repeatable deployment |
-| Hosting | Managed Laravel-compatible hosting or a managed app platform, plus managed PostgreSQL | Reduces operational burden for a small team |
+| Background jobs | Managed scheduled functions or a job service, added when needed | Avoids unnecessary infrastructure early on |
+| Testing | Vitest, React Testing Library and Playwright | Unit, component and critical end-to-end confidence |
+| Version control | Git + GitHub | History, reviews and collaboration |
+| Hosting | Vercel for the app + managed Supabase services | Straightforward deployment with less server administration |
 | Monitoring | Error tracking plus host/database health monitoring | Detects failures before users report them |
 
-**Stack decision note:** This is a recommendation, not a decision already made by the client. Confirm hosting budget, developer experience, and provider requirements before committing. Pin exact dependency versions in lockfiles after creating the project; do not rely on unpinned global packages in production.
-
----
+**Decision status:** Proceed with this stack unless a verified hosting, cost or provider requirement makes it unsuitable. Check current plan limits and production costs before launch. Commit dependency lockfiles and never rely on unpinned global packages in production.
 
 ## 2. MVP boundary
 
@@ -90,115 +78,94 @@ A feature is in the MVP only if it supports the core learner journey, is legally
 
 ## 3. Architecture
 
-Use a **single application repository** initially. Keep responsibilities separated inside it rather than splitting into microservices.
+Use a single application repository initially. Keep responsibilities separated inside it rather than splitting into microservices.
 
-```text
-Browser / installed PWA
-        |
-        | HTTPS
-        v
-Laravel application
-  ├── Web UI (React + Inertia)
-  ├── Authentication and authorization
-  ├── Booking and scheduling rules
-  ├── Payment orchestration and callback endpoints
-  ├── Resource and assignment workflows
-  ├── Notifications and background jobs
-  └── Admin operations and audit trail
-        |
-        +------ PostgreSQL database
-        |
-        +------ Private object storage
-        |
-        +------ M-Pesa Daraja API
-        |
-        +------ Selected video meeting provider
-        |
-        +------ Email / optional SMS provider
-```
+    Browser / installed PWA
+            | HTTPS
+            v
+    Next.js application (App Router)
+      - React UI and server-rendered pages
+      - Server Actions / Route Handlers for trusted operations
+      - Authentication and authorization checks
+      - Booking and scheduling rules
+      - Payment orchestration and callback endpoints
+      - Resource and assignment workflows
+      - Notifications and scheduled-work integrations
+      - Admin operations and audit trail
+            |
+            +-- Supabase PostgreSQL
+            +-- Supabase Auth
+            +-- Private Supabase Storage
+            +-- M-Pesa Daraja API
+            +-- Selected video meeting provider
+            +-- Email / optional SMS provider
 
 ### Architectural rules
 
-- The browser must never be trusted to determine permissions, payment status, commissions or booking availability.
-- Keep payment credentials, database credentials and signing secrets on the server.
+- Treat browser input as untrusted. The server determines permissions, payment status, commissions and booking availability.
+- Keep service-role keys, payment credentials and signing secrets on the server; never expose them in client-side environment variables.
 - Use database transactions and constraints for booking and payment state changes.
 - Verify payment callbacks on the server and make callback processing idempotent.
-- Keep private files in private storage; issue short-lived authorized download links when appropriate.
+- Keep private files in private storage; issue authorized, short-lived download links when appropriate.
 - Store provider IDs and references, not unnecessary sensitive provider payloads.
 - Use a staging environment separate from production.
+- Apply Row Level Security to sensitive tables where appropriate, alongside explicit server-side authorization checks for privileged operations.
 - Avoid microservices until there is a measured reason to split the system.
-
----
 
 ## 4. Languages and runtime
 
 | Technology | Purpose |
 |---|---|
-| PHP | Backend application and business logic |
-| TypeScript | Frontend code and type-safe UI interactions |
-| SQL | Database queries, constraints and reporting |
-| HTML | Accessible semantic page structure |
+| TypeScript | Main application language for UI and server-side logic |
+| SQL | Database schema, constraints, migrations and reporting |
+| HTML / React | Accessible page structure and UI components |
 | CSS / Tailwind utility classes | Responsive presentation |
-| JavaScript | Browser runtime; TypeScript is preferred for authored frontend code |
-| JSON | API payloads, configuration and integration messages |
-| Bash / YAML | Local developer scripts and CI workflows, as needed |
+| JavaScript | Browser and Node.js runtime; TypeScript is preferred for authored application code |
+| JSON | Route payloads, configuration and integration messages |
+| YAML | CI workflows, as needed |
 
 Use UTF-8 throughout. Store timestamps in UTC in the database and display them in the user's relevant time zone. For the Kenya-first launch, display East Africa Time by default while keeping the data model time-zone-aware.
 
----
-
 ## 5. Dependencies and tooling
 
-Exact versions should be chosen from the current supported stable releases at project setup and committed in lockfiles. The table below names the dependency families and their role, rather than claiming a tested version matrix.
+Choose supported stable releases at project setup and commit lockfiles. Avoid adding dependencies until a real feature needs them.
 
-### Backend
+### Application
 
-- Laravel framework — application, routing, validation, ORM, policies, queues and notifications.
-- PHP extensions required by the selected Laravel release and PostgreSQL driver.
-- PostgreSQL PDO driver (`pdo_pgsql`).
-- Composer — PHP dependency management.
-- Laravel migrations and seeders — repeatable database schema and development data.
-- Laravel queue worker — asynchronous notifications and background work.
-- Laravel scheduler — reminders, expiry and maintenance tasks.
-- Pest **or** PHPUnit — backend tests; choose one primary test runner.
-- Optional permission package only if built-in policies/gates and a simple role model prove insufficient. Do not add a package before the permission model is understood.
-
-### Frontend
-
-- React — component-based interface.
-- TypeScript — static type checking.
-- Inertia.js React adapter — bridge between Laravel routes/controllers and React pages.
-- Vite — frontend build tooling.
+- Next.js with the App Router — pages, server rendering and route handlers.
+- TypeScript — type checking across the application.
+- React — UI components.
+- Node.js — local runtime and build tooling; use a version supported by the selected Next.js release.
 - Tailwind CSS — styling.
-- A small accessible component library, selected after reviewing the prototype; avoid adding multiple overlapping UI libraries.
-- Vitest — frontend unit tests.
-- React Testing Library — component behaviour tests.
-- Playwright — browser-based end-to-end tests for the core flows.
+- Supabase JavaScript client — managed PostgreSQL, authentication and private storage integration.
+- Supabase SQL migrations — repeatable database schema changes.
+- Supabase Auth — identity and account recovery; follow current official guidance for secure sessions.
+- Vitest and React Testing Library — unit and component behaviour tests.
+- Playwright — browser-based end-to-end tests for critical flows.
+- Git and GitHub — version control and collaboration.
 
 ### PWA
 
 - Web app manifest with name, icons, theme colour, display mode and start URL.
-- Service worker, using a Vite-compatible PWA integration only after confirming compatibility with the chosen Laravel/Inertia build.
+- Service worker, using a Next.js-compatible PWA integration only after confirming compatibility with the selected version.
 - Offline fallback page and an explicit caching policy.
-- HTTPS in all deployed environments where PWA features are tested.
+- HTTPS in staging/production.
 
-Do not cache private learner records, payment pages, authenticated API responses or sensitive documents by default. Clear or invalidate relevant cached content on sign-out and permission changes.
+Do not cache private learner records, payment pages, authenticated responses or sensitive documents by default. Clear or invalidate relevant cached content on sign-out and permission changes.
 
 ### Operations and developer tools
 
-- Git and a private repository.
-- Composer lockfile and JavaScript package lockfile.
-- `.env.example` containing variable names only, never real secrets.
+- JavaScript package lockfile.
+- .env.example containing variable names and safe placeholders only, never real secrets.
 - Separate local, staging and production configuration.
-- CI checks for formatting, static analysis, tests and production builds.
+- CI checks for linting, type checking, tests and production builds.
 - Error monitoring and application/database health checks.
 - Automated database backups plus a tested restoration procedure.
+- Keep Supabase service-role credentials server-only. Only explicitly public configuration may use a NEXT_PUBLIC_ prefix.
 
 ### Avoid unnecessary dependencies
 
-Do not add Redis, Kubernetes, Elasticsearch, a separate API gateway, GraphQL, a custom video stack or a complex microservice architecture unless a verified requirement justifies the additional cost and maintenance.
-
----
+Do not add a separate PHP runtime, Composer, Redis, Kubernetes, Elasticsearch, a separate API gateway, GraphQL, a custom video stack or a complex microservice architecture unless a verified requirement justifies the additional cost and maintenance.
 
 ## 6. Database requirements
 
@@ -488,18 +455,18 @@ Aim for WCAG 2.2 AA accessibility, subject to testing and an agreed acceptance p
 
 ### Environments
 
-- **Local:** developer machines with fictional seed data.
+- **Local:** developer machine with fictional seed data and local environment variables.
 - **Staging:** production-like configuration, sandbox payment credentials and test accounts.
 - **Production:** real users, live credentials, backups, monitoring and restricted staff access.
 
 ### Minimum deployment checklist
 
 - Domain and HTTPS.
-- Managed PostgreSQL with restricted network access and backups.
-- Application hosting compatible with the selected Laravel release.
-- Private object storage with least-privilege access.
-- Environment secrets configured outside Git.
-- Queue worker and scheduler running.
+- Next.js application deployed to the selected Node.js-compatible host.
+- Managed PostgreSQL with restricted access, backups and a tested restoration process.
+- Supabase Auth and private storage configured with appropriate policies.
+- Environment secrets configured outside Git; service-role and payment secrets must remain server-only.
+- Scheduled jobs/retries configured if required by the MVP.
 - Database migrations run through a controlled deployment process.
 - Error tracking, logs and uptime/health monitoring.
 - Backup retention and restoration runbook.
@@ -509,18 +476,9 @@ Aim for WCAG 2.2 AA accessibility, subject to testing and an agreed acceptance p
 
 ### Operational ownership
 
-The client must assign a person/team to:
-- Review tutor applications and verification documents.
-- Approve and moderate learning resources.
-- Respond to learner/guardian support requests.
-- Handle complaints and safeguarding escalations.
-- Reconcile payments and review payout records.
-- Maintain policies, curriculum labels and course listings.
-- Monitor outages, backups and security updates.
+The client must assign a person/team to review tutor applications and verification documents, moderate learning resources, respond to learner/guardian support requests, handle complaints and safeguarding escalations, reconcile payments and payouts, maintain policies and course listings, and monitor outages, backups and security updates.
 
 A production platform is an ongoing service, not just a code delivery.
-
----
 
 ## 15. Suggested implementation sequence
 
@@ -538,18 +496,18 @@ A production platform is an ongoing service, not just a code delivery.
 
 ### Phase 1 — Repository and foundation
 
-- Create repository, Laravel project and React/TypeScript/Inertia setup.
-- Configure PostgreSQL, migrations, environment variables and local setup documentation.
-- Establish linting, formatting, automated tests and CI.
+- Set up the Next.js App Router project with TypeScript in the existing repository, preserving the two Markdown planning documents.
+- Configure environment variables and Supabase development project/database access.
+- Establish linting, type checking, automated tests and CI.
 - Build responsive shared layout, navigation, error states and public pages.
-- Add PWA manifest, icons and safe caching plan.
+- Add PWA manifest, icons and a safe caching plan.
 
 **Deliverable:** deployable skeleton with CI and staging environment.
 
 ### Phase 2 — Identity and administration
 
-- Registration, login, logout, verification and password recovery.
-- Roles, server-side policies and account status.
+- Registration, login, logout, verification and password recovery using Supabase Auth.
+- Roles, server-side permission checks and database access policies.
 - Learner and tutor profiles.
 - Tutor application and private document upload.
 - Administrator review, approval and audit trail.
@@ -591,8 +549,6 @@ A production platform is an ongoing service, not just a code delivery.
 ### Phase 6 — Improvements based on evidence
 
 Prioritize improvements using pilot feedback, support issues, usage data and actual business needs. Consider advanced labs, richer analytics, more payment methods and deeper school administration only after validation.
-
----
 
 ## 16. Client decisions required before coding
 
@@ -658,52 +614,41 @@ The MVP is ready for a controlled pilot when:
 
 ## 19. Final recommendation
 
-Start with **Laravel + React/TypeScript + Inertia + PostgreSQL**, a managed deployment, private object storage, one video provider, and M-Pesa only if paid bookings are part of launch.
+Build **Next.js + TypeScript + PostgreSQL**, using Supabase for managed database, authentication and private storage, with Vercel as the initial hosting option. Integrate one video provider and M-Pesa only if paid bookings are part of launch.
 
-Before writing feature code, hold a short discovery session and get explicit answers to the decisions in Section 16. Then implement the core journey in vertical slices—each slice should include UI, backend validation, database persistence, authorization and tests.
+Before writing feature code, settle the decisions in Section 16. Then implement the core journey in vertical slices—each slice should include UI, server-side validation, database persistence, authorization and tests.
 
-The most important technical work is not the homepage or the PWA install button. It is getting **permissions, bookings, payment state, guardian access and private learning records correct**. Build those foundations before adding advanced labs or analytics.
-
----
+The most important technical work is not the homepage or PWA install button. It is getting **permissions, bookings, payment state, guardian access and private learning records correct**. Build those foundations before adding advanced labs or analytics.
 
 ## Appendix A — Suggested repository structure
 
-An initial single-repository layout could look like this; adapt to the selected Laravel/Inertia starter:
+An initial single-repository layout could look like this; adapt it as features require them.
 
-```text
-bems/
-├── app/
-│   ├── Actions/              # Explicit business workflows, where useful
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   ├── Middleware/
-│   │   └── Requests/         # Server-side validation
-│   ├── Models/
-│   ├── Policies/             # Authorization rules
-│   ├── Jobs/                 # Queued work
-│   ├── Notifications/
-│   └── Services/             # Payment/video provider adapters
-├── database/
-│   ├── migrations/
-│   ├── factories/
-│   └── seeders/
-├── resources/
-│   ├── js/
-│   │   ├── Components/
-│   │   ├── Layouts/
-│   │   ├── Pages/
-│   │   └── Types/
-│   └── css/
-├── routes/
-├── tests/
-├── public/
-│   ├── icons/
-│   └── manifest.json
-├── .env.example
-├── composer.json
-├── package.json
-└── README.md
-```
+    bems/
+    ├── app/
+    │   ├── (public)/          # Public pages
+    │   ├── (auth)/            # Sign-in and registration
+    │   ├── (dashboard)/       # Protected application pages
+    │   ├── api/               # Route handlers, including provider callbacks
+    │   └── layout.tsx
+    ├── components/            # Shared React components
+    ├── lib/
+    │   ├── supabase/          # Browser/server Supabase clients
+    │   ├── auth/              # Authorization helpers
+    │   └── services/          # Payment/video provider adapters
+    ├── types/
+    ├── supabase/
+    │   ├── migrations/
+    │   └── seed.sql
+    ├── tests/
+    ├── public/
+    │   ├── icons/
+    │   └── manifest.json
+    ├── docs/
+    ├── .env.example
+    ├── package.json
+    ├── package-lock.json
+    └── README.md
 
 Do not create every directory or abstraction on day one. Add structure as real features require it.
 
