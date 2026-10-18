@@ -215,8 +215,32 @@ create policy "Users read published assessments or their own"
   on public.learning_assessments for select to authenticated
   using (
     teacher_id = auth.uid()
-    or status = 'published'
     or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
+    or (
+      status = 'published'
+      and (
+        exists (
+          select 1
+          from public.teacher_learner_assignments tla
+          where tla.teacher_id = learning_assessments.teacher_id
+            and tla.learner_id = auth.uid()
+            and tla.subject_name = learning_assessments.subject_name
+            and tla.status = 'active'
+            and (tla.course_name is null or tla.course_name = learning_assessments.course_name)
+        )
+        or exists (
+          select 1
+          from public.guardian_student_links gl
+          join public.teacher_learner_assignments tla on tla.learner_id = gl.learner_id
+          where gl.guardian_id = auth.uid()
+            and gl.status = 'active'
+            and tla.teacher_id = learning_assessments.teacher_id
+            and tla.subject_name = learning_assessments.subject_name
+            and tla.status = 'active'
+            and (tla.course_name is null or tla.course_name = learning_assessments.course_name)
+        )
+      )
+    )
   );
 
 drop policy if exists "Teachers create their own assessments" on public.learning_assessments;
@@ -290,7 +314,20 @@ drop policy if exists "Teachers update results for their own assessments" on pub
 create policy "Teachers update results for their own assessments"
   on public.assessment_results for update to authenticated
   using (
-    exists (select 1 from public.learning_assessments a where a.id = assessment_id and a.teacher_id = auth.uid())
+    (
+      exists (select 1 from public.learning_assessments a where a.id = assessment_id and a.teacher_id = auth.uid())
+      and exists (
+        select 1
+        from public.learning_assessments a
+        join public.teacher_learner_assignments tla
+          on tla.teacher_id = a.teacher_id
+         and tla.learner_id = assessment_results.learner_id
+         and tla.subject_name = a.subject_name
+         and tla.status = 'active'
+         and (tla.course_name is null or tla.course_name = a.course_name)
+        where a.id = assessment_id
+      )
+    )
     or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
   )
   with check (
@@ -368,11 +405,29 @@ drop policy if exists "Teachers update their own learner reports and admins mana
 create policy "Teachers update their own learner reports and admins manage all"
   on public.learner_reports for update to authenticated
   using (
-    created_by = auth.uid()
+    (
+      created_by = auth.uid()
+      and exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'teacher')
+      and exists (
+        select 1 from public.teacher_learner_assignments tla
+        where tla.teacher_id = auth.uid()
+          and tla.learner_id = learner_reports.learner_id
+          and tla.status = 'active'
+      )
+    )
     or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
   )
   with check (
-    created_by = auth.uid()
+    (
+      created_by = auth.uid()
+      and exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'teacher')
+      and exists (
+        select 1 from public.teacher_learner_assignments tla
+        where tla.teacher_id = auth.uid()
+          and tla.learner_id = learner_reports.learner_id
+          and tla.status = 'active'
+      )
+    )
     or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
   );
 
