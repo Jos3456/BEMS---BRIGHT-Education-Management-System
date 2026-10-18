@@ -1,16 +1,43 @@
-@"
-# Local temporary files and secrets
-setup.txt
-.env
-.env.*
-!.env.example
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Dependencies and build output
-node_modules/
-.next/
-out/
-dist/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Debug logs
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
 npm-debug.log*
-"@ | Set-Content -Encoding utf8 .gitignore
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+/bems-temp/
