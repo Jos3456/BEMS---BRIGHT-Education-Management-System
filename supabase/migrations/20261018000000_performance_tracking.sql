@@ -97,6 +97,21 @@ create table if not exists public.guardian_student_links (
   constraint guardian_student_links_unique unique (guardian_id, learner_id)
 );
 
+-- Explicit teacher/learner authorization. This is admin-managed for now; later,
+-- a validated booking/course-enrolment workflow can create these relationships.
+create table if not exists public.teacher_learner_assignments (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null references auth.users(id) on delete cascade,
+  learner_id uuid not null references auth.users(id) on delete cascade,
+  subject_name text not null,
+  course_name text,
+  status text not null default 'active' check (status in ('active', 'revoked')),
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  constraint teacher_learner_assignments_unique unique (teacher_id, learner_id, subject_name, course_name),
+  constraint teacher_learner_assignments_not_self check (teacher_id <> learner_id)
+);
+
 create table if not exists public.learner_reports (
   id uuid primary key default gen_random_uuid(),
   learner_id uuid not null references auth.users(id) on delete restrict,
@@ -123,6 +138,8 @@ create index if not exists guardian_student_links_guardian_idx
   on public.guardian_student_links (guardian_id, status);
 create index if not exists guardian_student_links_learner_idx
   on public.guardian_student_links (learner_id, status);
+create index if not exists teacher_learner_assignments_teacher_learner_idx
+  on public.teacher_learner_assignments (teacher_id, learner_id, status);
 create index if not exists learner_reports_learner_period_idx
   on public.learner_reports (learner_id, academic_period_id, status);
 
@@ -132,6 +149,7 @@ alter table public.grade_scale_rules enable row level security;
 alter table public.learning_assessments enable row level security;
 alter table public.assessment_results enable row level security;
 alter table public.guardian_student_links enable row level security;
+alter table public.teacher_learner_assignments enable row level security;
 alter table public.learner_reports enable row level security;
 
 -- Academic periods and grading rules are readable to signed-in users; only admins
@@ -171,6 +189,23 @@ create policy "Signed-in users can read grade scale rules"
 drop policy if exists "Admins manage grade scale rules" on public.grade_scale_rules;
 create policy "Admins manage grade scale rules"
   on public.grade_scale_rules for all to authenticated
+  using (exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin'))
+  with check (exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin'));
+
+-- Only admins can establish teacher/learner access until a trusted booking or
+-- enrolment workflow is implemented. Participants may read their own relationship.
+drop policy if exists "Participants and admins read teacher learner assignments" on public.teacher_learner_assignments;
+create policy "Participants and admins read teacher learner assignments"
+  on public.teacher_learner_assignments for select to authenticated
+  using (
+    teacher_id = auth.uid()
+    or learner_id = auth.uid()
+    or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
+  );
+
+drop policy if exists "Admins manage teacher learner assignments" on public.teacher_learner_assignments;
+create policy "Admins manage teacher learner assignments"
+  on public.teacher_learner_assignments for all to authenticated
   using (exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin'))
   with check (exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin'));
 
@@ -237,6 +272,17 @@ create policy "Teachers enter results for their own assessments"
       where a.id = assessment_id and a.teacher_id = auth.uid()
     )
     and exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'teacher')
+    and exists (
+      select 1
+      from public.learning_assessments a
+      join public.teacher_learner_assignments tla
+        on tla.teacher_id = a.teacher_id
+       and tla.learner_id = assessment_results.learner_id
+       and tla.subject_name = a.subject_name
+       and tla.status = 'active'
+       and (tla.course_name is null or tla.course_name = a.course_name)
+      where a.id = assessment_id
+    )
     and (score is null or score <= (select a.max_score from public.learning_assessments a where a.id = assessment_id))
   );
 
@@ -248,7 +294,21 @@ create policy "Teachers update results for their own assessments"
     or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
   )
   with check (
-    exists (select 1 from public.learning_assessments a where a.id = assessment_id and a.teacher_id = auth.uid())
+    (
+      exists (select 1 from public.learning_assessments a where a.id = assessment_id and a.teacher_id = auth.uid())
+      and exists (
+        select 1
+        from public.learning_assessments a
+        join public.teacher_learner_assignments tla
+          on tla.teacher_id = a.teacher_id
+         and tla.learner_id = assessment_results.learner_id
+         and tla.subject_name = a.subject_name
+         and tla.status = 'active'
+         and (tla.course_name is null or tla.course_name = a.course_name)
+        where a.id = assessment_id
+      )
+      and (score is null or score <= (select a.max_score from public.learning_assessments a where a.id = assessment_id))
+    )
     or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
   );
 
@@ -296,6 +356,12 @@ create policy "Teachers create their own learner reports"
   with check (
     created_by = auth.uid()
     and exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'teacher')
+    and exists (
+      select 1 from public.teacher_learner_assignments tla
+      where tla.teacher_id = auth.uid()
+        and tla.learner_id = learner_reports.learner_id
+        and tla.status = 'active'
+    )
   );
 
 drop policy if exists "Teachers update their own learner reports and admins manage all" on public.learner_reports;
