@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+export const instant = false;
 import StudentDashboard from "./student-dashboard";
 
 export default async function DashboardPage() {
