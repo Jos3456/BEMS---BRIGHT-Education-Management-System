@@ -1,5 +1,43 @@
 
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
 export default function Home() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Unable to connect. Check your Supabase configuration.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-xl md:grid-cols-2">
@@ -10,7 +48,9 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-wide">BEMS</h1>
-              <p className="text-sm text-blue-200">BRIGHT Education Management System</p>
+              <p className="text-sm text-blue-200">
+                BRIGHT Education Management System
+              </p>
             </div>
           </div>
 
@@ -26,9 +66,8 @@ export default function Home() {
             One place to manage school operations, support learners, and keep
             your school community connected.
           </p>
-
           <p className="mt-16 text-sm text-blue-300">
-            © {new Date().getFullYear()} BRIGHT Education
+            © 2026 BRIGHT Education
           </p>
         </section>
 
@@ -38,12 +77,9 @@ export default function Home() {
             Sign in to access your school dashboard.
           </p>
 
-          <form className="mt-8 space-y-5">
+          <form onSubmit={handleLogin} className="mt-8 space-y-5">
             <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
                 Email address
               </label>
               <input
@@ -52,16 +88,14 @@ export default function Home() {
                 type="email"
                 autoComplete="email"
                 placeholder="you@school.com"
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"                required
               />
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
+              <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-700">
                 Password
               </label>
               <input
@@ -70,22 +104,34 @@ export default function Home() {
                 type="password"
                 autoComplete="current-password"
                 placeholder="Enter your password"
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                 required
               />
             </div>
 
+            {error && (
+              <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="w-full rounded-lg bg-blue-700 px-4 py-3 font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              disabled={loading}
+              className="w-full rounded-lg bg-blue-700 px-4 py-3 font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            Need help accessing your account? Contact your school administrator.
-          </p>
+          <p className="mt-6 text-center text-sm text-slate-600">
+              New to BEMS?{" "}
+          <a href="/signup" className="font-semibold text-blue-700 hover:underline">
+            Create an account
+          </a>
+        </p>
         </section>
       </div>
     </main>

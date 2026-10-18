@@ -1,0 +1,1 @@
+1. allow user to view password in sign up and sign in forms
