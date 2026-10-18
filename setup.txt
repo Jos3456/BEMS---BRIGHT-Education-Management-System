@@ -1,5 +1,10 @@
-Supabase database password: bemsmanagement2026
-Git push commands:
+BEMS setup notes
+
+Never commit database passwords, Supabase service-role keys, or other secrets to GitHub.
+Store local credentials in .env.local (which must remain git-ignored) and use your hosting
+provider's environment-variable settings for deployment.
+
+Git commands:
     git add .
-    git commit -m "Build BEMS login page"
+    git commit -m "Describe your change"
     git push origin main
