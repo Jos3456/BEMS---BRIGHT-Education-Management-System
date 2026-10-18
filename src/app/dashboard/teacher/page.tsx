@@ -2,6 +2,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+export const instant = false;
+
 const assessmentTypes = [
   { value: "quiz", label: "Quiz" },
   { value: "assignment", label: "Assignment" },
