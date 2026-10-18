@@ -1,1 +1,0 @@
-Supabase database password: bemsmanagement2026
