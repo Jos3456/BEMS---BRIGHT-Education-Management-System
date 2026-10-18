@@ -24,35 +24,35 @@ const features = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white text-slate-900">
+    <main className="min-h-screen overflow-x-hidden bg-bems-page text-slate-900">
       {/* Floating navigation */}
       <header className="fixed left-1/2 top-4 z-50 w-[calc(100%-2rem)] max-w-6xl -translate-x-1/2">
-        <nav className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-lg shadow-slate-900/5 backdrop-blur-xl sm:px-6">
+        <nav className="flex items-center justify-between rounded-2xl border border-bems-border/80 bg-white/95 px-4 py-3 shadow-lg shadow-slate-900/5 backdrop-blur-xl sm:px-6">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-700 text-lg font-bold text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bems-primary text-lg font-bold text-white">
               B
             </div>
             <div>
               <p className="text-base font-bold tracking-tight text-slate-900">
                 BRIGHT Education
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-bems-muted">
                 Education Management System
               </p>
             </div>
           </Link>
 
           <div className="hidden items-center gap-7 lg:flex">
-            <a href="#home" className="text-sm text-slate-600 hover:text-blue-700">
+            <a href="#home" className="text-sm text-slate-600 hover:text-bems-primary">
               Home
             </a>
-            <a href="#about" className="text-sm text-slate-600 hover:text-blue-700">
+            <a href="#about" className="text-sm text-slate-600 hover:text-bems-primary">
               About BEMS
             </a>
-            <a href="#learners" className="text-sm text-slate-600 hover:text-blue-700">
+            <a href="#learners" className="text-sm text-slate-600 hover:text-bems-primary">
               For Learners
             </a>
-            <a href="#teachers" className="text-sm text-slate-600 hover:text-blue-700">
+            <a href="#teachers" className="text-sm text-slate-600 hover:text-bems-primary">
               For Teachers
             </a>
           </div>
@@ -66,7 +66,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/signup"
-              className="rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
+              className="rounded-xl bg-bems-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-bems-primary-hover"
             >
               Get started
             </Link>
@@ -77,21 +77,21 @@ export default function HomePage() {
       {/* Hero */}
       <section
         id="home"
-        className="relative scroll-mt-28 overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white px-6 pb-20 pt-36 sm:pt-44"
+        className="relative scroll-mt-28 overflow-hidden bg-gradient-to-b from-bems-highlight via-bems-page to-bems-page px-6 pb-20 pt-36 sm:pt-44"
       >
-        <div className="pointer-events-none absolute -right-32 -top-20 h-96 w-96 rounded-full bg-blue-100/70 blur-3xl" />
-        <div className="pointer-events-none absolute -left-32 top-64 h-72 w-72 rounded-full bg-sky-100/60 blur-3xl" />
+        <div className="pointer-events-none absolute -right-32 -top-20 h-96 w-96 rounded-full bg-bems-highlight/70 blur-3xl" />
+        <div className="pointer-events-none absolute -left-32 top-64 h-72 w-72 rounded-full bg-bems-highlight/60 blur-3xl" />
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-medium text-blue-800 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-bems-border bg-white px-4 py-2 text-sm font-medium text-bems-primary shadow-sm">
               <span className="h-2 w-2 rounded-full bg-blue-600" />
               A better way to learn together
             </div>
 
             <h1 className="mt-7 max-w-2xl text-4xl font-bold leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
               Education that moves{" "}
-              <span className="text-blue-700">everyone forward.</span>
+              <span className="text-bems-primary">everyone forward.</span>
             </h1>
 
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
@@ -103,20 +103,20 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
                 href="/signup"
-                className="rounded-xl bg-blue-700 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:bg-blue-800"
+                className="rounded-xl bg-bems-primary px-6 py-3.5 font-semibold text-white shadow-lg shadow-bems-primary/20 transition hover:-translate-y-0.5 hover:bg-bems-primary-hover"
               >
                 Get started
                 <span className="ml-2" aria-hidden="true">→</span>
               </Link>
               <a
                 href="#about"
-                className="rounded-xl border border-slate-300 bg-white px-6 py-3.5 font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50"
+                className="rounded-xl border border-bems-border bg-white px-6 py-3.5 font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-bems-highlight"
               >
                 Discover BEMS
               </a>
             </div>
 
-            <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-500">
+            <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm text-bems-muted">
               <span>For learners</span>
               <span>For teachers</span>
               <span>For families</span>
@@ -125,19 +125,19 @@ export default function HomePage() {
 
           {/* Right-hand visual */}
           <div className="relative mx-auto w-full max-w-lg">
-            <div className="absolute -inset-4 rounded-[2rem] bg-blue-100/70 blur-2xl" />
+            <div className="absolute -inset-4 rounded-[2rem] bg-bems-highlight/70 blur-2xl" />
 
-            <div className="relative rounded-3xl border border-blue-100 bg-white p-5 shadow-2xl shadow-blue-900/10 sm:p-7">
+            <div className="relative rounded-3xl border border-bems-border bg-white p-5 shadow-2xl shadow-blue-900/10 sm:p-7">
               <div className="flex items-center justify-between border-b border-slate-100 pb-5">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">
+                  <p className="text-sm font-medium text-bems-muted">
                     YOUR LEARNING JOURNEY
                   </p>
                   <h2 className="mt-1 text-xl font-bold">
                     Room to grow.
                   </h2>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bems-highlight text-bems-primary">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -154,8 +154,8 @@ export default function HomePage() {
               </div>
 
               <div className="mt-6 space-y-4">
-                <div className="rounded-2xl bg-blue-50 p-5">
-                  <p className="text-sm font-medium text-blue-800">
+                <div className="rounded-2xl bg-bems-highlight p-5">
+                  <p className="text-sm font-medium text-bems-primary">
                     LEARN
                   </p>
                   <h3 className="mt-2 text-lg font-bold text-slate-900">
@@ -168,22 +168,22 @@ export default function HomePage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-blue-700">
+                  <div className="rounded-2xl border border-bems-border p-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-bems-primary">
                       <span aria-hidden="true">↗</span>
                     </div>
                     <p className="mt-3 font-semibold">Grow</p>
-                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                    <p className="mt-1 text-sm leading-5 text-bems-muted">
                       Build knowledge step by step.
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 p-4">
+                  <div className="rounded-2xl border border-bems-border p-4">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
                       <span aria-hidden="true">◎</span>
                     </div>
                     <p className="mt-3 font-semibold">Connect</p>
-                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                    <p className="mt-1 text-sm leading-5 text-bems-muted">
                       Keep learners and families connected.
                     </p>
                   </div>
@@ -202,7 +202,7 @@ export default function HomePage() {
       <section id="about" className="scroll-mt-28 px-6 py-20 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-widest text-blue-700">
+            <p className="text-sm font-bold uppercase tracking-widest text-bems-primary">
               Learning, connected
             </p>
             <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -226,9 +226,9 @@ export default function HomePage() {
                       ? "teachers"
                       : "families"
                 }
-                className="scroll-mt-32 rounded-2xl border border-slate-200 bg-white p-7 transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
+                className="scroll-mt-32 rounded-2xl border border-bems-border bg-white p-7 transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
               >
-                <span className="text-sm font-bold text-blue-700">
+                <span className="text-sm font-bold text-bems-primary">
                   {feature.number}
                 </span>
                 <h3 className="mt-5 text-xl font-bold">{feature.title}</h3>
@@ -243,23 +243,23 @@ export default function HomePage() {
 
       {/* Call to action */}
       <section className="px-6 pb-20">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-blue-800 px-7 py-12 text-white sm:px-12 sm:py-16">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-bems-primary px-7 py-12 text-white sm:px-12 sm:py-16">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-widest text-blue-200">
+              <p className="text-sm font-semibold uppercase tracking-widest text-blue-50">
                 Your next step starts here
               </p>
               <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                 Be part of a better learning experience.
               </h2>
-              <p className="mt-4 leading-7 text-blue-100">
+              <p className="mt-4 leading-7 text-blue-50">
                 Create your account to get started with BEMS.
                 Teacher applicants will go through an approval process.
               </p>
             </div>
             <Link
               href="/signup"
-              className="shrink-0 rounded-xl bg-white px-6 py-3.5 font-semibold text-blue-800 transition hover:bg-blue-50"
+              className="shrink-0 rounded-xl bg-white px-6 py-3.5 font-semibold text-bems-primary transition hover:bg-bems-highlight"
             >
               Create an account →
             </Link>
@@ -268,14 +268,14 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 px-6 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+      <footer className="border-t border-bems-border px-6 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-bems-muted sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 BRIGHT Education Management System</p>
           <div className="flex flex-wrap gap-5">
-            <Link href="/login" className="hover:text-blue-700">
+            <Link href="/login" className="hover:text-bems-primary">
               Sign in
             </Link>
-            <Link href="/signup" className="hover:text-blue-700">
+            <Link href="/signup" className="hover:text-bems-primary">
               Register
             </Link>
           </div>
