@@ -195,11 +195,17 @@ create policy "Admins manage grade scale rules"
 -- Only admins can establish teacher/learner access until a trusted booking or
 -- enrolment workflow is implemented. Participants may read their own relationship.
 drop policy if exists "Participants and admins read teacher learner assignments" on public.teacher_learner_assignments;
-create policy "Participants and admins read teacher learner assignments"
+create policy "Participants linked guardians and admins read teacher learner assignments"
   on public.teacher_learner_assignments for select to authenticated
   using (
     teacher_id = auth.uid()
     or learner_id = auth.uid()
+    or exists (
+      select 1 from public.guardian_student_links gl
+      where gl.guardian_id = auth.uid()
+        and gl.learner_id = teacher_learner_assignments.learner_id
+        and gl.status = 'active'
+    )
     or exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin')
   );
 
@@ -437,7 +443,7 @@ create policy "Admins delete learner reports"
   using (exists (select 1 from public.user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin'));
 
 -- Keep updated_at current when the application updates these records.
-create or replace function public.set_updated_at()
+create or replace function public.set_performance_tracking_updated_at()
 returns trigger
 language plpgsql
 as $$
@@ -450,14 +456,14 @@ $$;
 drop trigger if exists learning_assessments_set_updated_at on public.learning_assessments;
 create trigger learning_assessments_set_updated_at
 before update on public.learning_assessments
-for each row execute function public.set_updated_at();
+for each row execute function public.set_performance_tracking_updated_at();
 
 drop trigger if exists assessment_results_set_updated_at on public.assessment_results;
 create trigger assessment_results_set_updated_at
 before update on public.assessment_results
-for each row execute function public.set_updated_at();
+for each row execute function public.set_performance_tracking_updated_at();
 
 drop trigger if exists learner_reports_set_updated_at on public.learner_reports;
 create trigger learner_reports_set_updated_at
 before update on public.learner_reports
-for each row execute function public.set_updated_at();
+for each row execute function public.set_performance_tracking_updated_at();
