@@ -46,7 +46,16 @@ function ArrowIcon() {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7faff] text-[#17324f]">
+    <main
+      className="min-h-screen overflow-x-hidden text-[#17324f]"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(247,250,255,0.84), rgba(247,250,255,0.90)), url('https://raw.githubusercontent.com/Jos3456/BEMS---BRIGHT-Education-Management-System/main/classroom.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+        backgroundAttachment: "fixed",
+      }}
+    >
       <header className="fixed left-1/2 top-4 z-50 w-[calc(100%-2rem)] max-w-6xl -translate-x-1/2">
         <nav className="flex items-center justify-between rounded-[1.35rem] border border-white/90 bg-white/90 px-4 py-3 shadow-[0_8px_35px_rgba(32,70,110,0.08)] backdrop-blur-xl sm:px-6">
           <Link href="/" className="flex items-center gap-3" aria-label="BEMS home">
