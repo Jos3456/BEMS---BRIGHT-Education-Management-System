@@ -1,1 +1,5 @@
 Supabase database password: bemsmanagement2026
+Git push commands:
+    git add .
+    git commit -m "Build BEMS login page"
+    git push origin main
