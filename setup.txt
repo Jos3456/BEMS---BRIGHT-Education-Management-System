@@ -1,10 +1,4 @@
-BEMS setup notes
-
-Never commit database passwords, Supabase service-role keys, or other secrets to GitHub.
-Store local credentials in .env.local (which must remain git-ignored) and use your hosting
-provider's environment-variable settings for deployment.
-
-Git commands:
+Git push commands:
     git add .
-    git commit -m "Describe your change"
+    git commit -m "Build BEMS login page"
     git push origin main
