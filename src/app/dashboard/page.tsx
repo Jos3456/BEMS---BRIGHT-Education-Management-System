@@ -77,7 +77,7 @@ export default async function DashboardPage() {
 
         <section className="mt-8 rounded-[1.75rem] bg-gradient-to-br from-[#153d70] to-[#2b72b8] p-7 text-white sm:p-10">
           <p className="text-xs font-bold tracking-[0.2em] text-[#c9e0ff]">{portalNames[role] ?? "BEMS Portal"}</p>
-          <h2 className="mt-3 text-3xl font-semibold">Welcome{profile.full_name ? `, ${profile.full_name}` : ""}</h2>
+          <h2 className="mt-3 text-3xl font-semibold">Welcome{profile.full_name ? ", " + profile.full_name : ""}</h2>
           <p className="mt-3 text-sm text-blue-100">{user.email}</p>
         </section>
 
@@ -86,6 +86,11 @@ export default async function DashboardPage() {
           <p className="mt-2 leading-7 text-[#71849b]">
             Your {role === "teacher" ? "teaching tools and application status" : role === "parent" ? "linked learners and learning updates" : "administration tools"} will appear here as those features are built.
           </p>
+          {role === "teacher" && (
+            <a href="/dashboard/teacher" className="mt-5 inline-flex rounded-xl bg-[#174a8b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#123d75]">
+              Open teacher assessment tools
+            </a>
+          )}
         </section>
       </div>
     </main>
