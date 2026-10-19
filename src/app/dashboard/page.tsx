@@ -41,6 +41,12 @@ export default async function DashboardPage() {
 
   const role = roles[0].role;
 
+  const { data: teacherApplication } = await supabase
+    .from("teacher_applications")
+    .select("status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   async function signOut() {
     "use server";
     const serverSupabase = await createClient();
@@ -89,11 +95,36 @@ export default async function DashboardPage() {
           <p className="mt-3 text-sm text-blue-100">{user.email}</p>
         </section>
 
+        {teacherApplication?.status === "approved" && (
+          <section
+            role="status"
+            className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950"
+          >
+            <h3 className="font-semibold">Your teacher application has been approved!</h3>
+            <p className="mt-1 text-sm leading-6">
+              Congratulations. Your teacher account is approved and you can now access the teacher tools.
+            </p>
+            <a
+              href="/dashboard/teacher"
+              className="mt-3 inline-flex rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+            >
+              Open teacher tools
+            </a>
+          </section>
+        )}
+
         <section className="mt-5 rounded-[1.5rem] border border-[#e1eaf5] bg-white p-6">
           <h3 className="text-lg font-semibold">Your BEMS dashboard</h3>
           <p className="mt-2 leading-7 text-[#71849b]">
             Your {role === "teacher" ? "teaching tools and application status" : role === "parent" ? "linked learners and learning updates" : "administration tools"} will appear here as those features are built.
           </p>
+          {teacherApplication?.status === "draft" && (
+            <div className="mt-5 rounded-xl border border-[#dbe8fa] bg-[#eef5ff] p-4">
+              <p className="font-semibold text-[#174a8b]">Finish your teacher application</p>
+              <p className="mt-1 text-sm leading-6 text-[#47627f]">Your application is saved as a draft. Complete the details and submit it for administrator review.</p>
+              <a href="/dashboard/teacher-application" className="mt-3 inline-flex rounded-xl bg-[#174a8b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#123d75]">Complete application</a>
+            </div>
+          )}
           {role === "teacher" && (
             <a href="/dashboard/teacher" className="mt-5 inline-flex rounded-xl bg-[#174a8b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#123d75]">
               Open teacher assessment tools
