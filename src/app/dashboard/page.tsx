@@ -95,6 +95,24 @@ export default async function DashboardPage() {
           <p className="mt-3 text-sm text-blue-100">{user.email}</p>
         </section>
 
+        {teacherApplication?.status === "approved" && (
+          <section
+            role="status"
+            className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950"
+          >
+            <h3 className="font-semibold">Your teacher application has been approved!</h3>
+            <p className="mt-1 text-sm leading-6">
+              Congratulations. Your teacher account is approved and you can now access the teacher tools.
+            </p>
+            <a
+              href="/dashboard/teacher"
+              className="mt-3 inline-flex rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+            >
+              Open teacher tools
+            </a>
+          </section>
+        )}
+
         <section className="mt-5 rounded-[1.5rem] border border-[#e1eaf5] bg-white p-6">
           <h3 className="text-lg font-semibold">Your BEMS dashboard</h3>
           <p className="mt-2 leading-7 text-[#71849b]">
