@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { connection } from "next/server";
 
 export const instant = false;
 import StudentDashboard from "./student-dashboard";
 import { loadStudentData } from "./student-data";
 
+
 export default async function DashboardPage() {
+  await connection();
   const supabase = await createClient();
 
   const {
