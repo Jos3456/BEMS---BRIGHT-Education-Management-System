@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const instant = false;
 import StudentDashboard from "./student-dashboard";
+import { loadStudentData } from "./student-data";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -45,10 +46,12 @@ export default async function DashboardPage() {
   }
 
   if (role === "student") {
+    const data = await loadStudentData(supabase, user.id);
     return (
       <StudentDashboard
         name={profile.full_name ?? ""}
         email={user.email ?? ""}
+        data={data}
         signOut={signOut}
       />
     );
