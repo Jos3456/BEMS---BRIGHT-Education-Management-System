@@ -127,7 +127,7 @@ export default async function TeacherApplicationPage({ searchParams }: Applicati
           <p role="alert" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Please add your qualifications, at least one subject and curriculum, and keep each field within its stated limit.</p>
         )}
         {params.error === "submit_failed" && (
-          <p role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">We couldn't submit your application. Your draft has not been intentionally changed. Please try again; if the problem persists, contact support.</p>
+          <p role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">We couldn&apos;t submit your application. Your draft has not been intentionally changed. Please try again; if the problem persists, contact support.</p>
         )}
 
         <form action={submitApplication} className="space-y-5 rounded-2xl border border-[#e1eaf5] bg-white p-5 shadow-sm sm:p-8">
