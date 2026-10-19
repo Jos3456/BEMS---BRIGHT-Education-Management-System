@@ -93,7 +93,15 @@ export default async function TeacherApplicationPage({ searchParams }: Applicati
       <main className="min-h-screen bg-[#f7faff] px-4 py-10 text-[#17324f]">
         <section className="mx-auto max-w-2xl rounded-2xl border border-[#e1eaf5] bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold">Teacher application</h1>
-          <p className="mt-3 text-sm leading-6 text-[#71849b]">Your application status is <strong className="capitalize text-[#174a8b]">{statusLabel}</strong>.</p>
+          {application.status === "approved" ? (
+            <div role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+              <h2 className="font-semibold">Congratulations! Your teacher application has been approved.</h2>
+              <p className="mt-1 text-sm leading-6">Your teacher role is active. You can now access your teacher tools.</p>
+              <a href="/dashboard/teacher" className="mt-3 inline-flex rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">Open teacher tools</a>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm leading-6 text-[#71849b]">Your application status is <strong className="capitalize text-[#174a8b]">{statusLabel}</strong>.</p>
+          )}
           <a href="/dashboard" className="mt-5 inline-flex rounded-xl bg-[#174a8b] px-4 py-2.5 text-sm font-semibold text-white">Back to dashboard</a>
         </section>
       </main>
