@@ -26,20 +26,20 @@ begin
   end if;
 
   if p_subjects is null or cardinality(p_subjects) = 0
-     or exists (select 1 from unnest(p_subjects) as s where length(btrim(s)) = 0 or length(s) > 120) then
+     or exists (select 1 from unnest(p_subjects) as item(value) where length(btrim(value)) = 0 or length(value) > 120) then
     raise exception 'Add at least one valid subject';
   end if;
 
   if p_curricula is null or cardinality(p_curricula) = 0
-     or exists (select 1 from unnest(p_curricula) as c where length(btrim(c)) = 0 or length(c) > 120) then
+     or exists (select 1 from unnest(p_curricula) as item(value) where length(btrim(value)) = 0 or length(value) > 120) then
     raise exception 'Add at least one valid curriculum';
   end if;
 
   update public.teacher_applications
   set qualifications = btrim(p_qualifications),
       experience = nullif(btrim(coalesce(p_experience, '')), ''),
-      subjects = (select array_agg(distinct btrim(s)) from unnest(p_subjects) as s),
-      curricula = (select array_agg(distinct btrim(c)) from unnest(p_curricula) as c),
+      subjects = (select array_agg(distinct btrim(value)) from unnest(p_subjects) as item(value)),
+      curricula = (select array_agg(distinct btrim(value)) from unnest(p_curricula) as item(value)),
       status = 'submitted',
       submitted_at = now(),
       updated_at = now()
