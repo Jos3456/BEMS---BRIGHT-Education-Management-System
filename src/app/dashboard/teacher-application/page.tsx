@@ -7,7 +7,7 @@ export const instant = false;
 
 function parseList(value: FormDataEntryValue | null) {
   return typeof value === "string"
-    ? [...new Set(value.split(/[,\\n]/).map((item) => item.trim()).filter(Boolean))]
+    ? [...new Set(value.split(/[,\n]/).map((item) => item.trim()).filter(Boolean))]
     : [];
 }
 
