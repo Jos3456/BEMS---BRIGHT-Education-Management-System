@@ -41,6 +41,12 @@ export default async function DashboardPage() {
 
   const role = roles[0].role;
 
+  const { data: teacherApplication } = await supabase
+    .from("teacher_applications")
+    .select("status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   async function signOut() {
     "use server";
     const serverSupabase = await createClient();
@@ -94,6 +100,13 @@ export default async function DashboardPage() {
           <p className="mt-2 leading-7 text-[#71849b]">
             Your {role === "teacher" ? "teaching tools and application status" : role === "parent" ? "linked learners and learning updates" : "administration tools"} will appear here as those features are built.
           </p>
+          {teacherApplication?.status === "draft" && (
+            <div className="mt-5 rounded-xl border border-[#dbe8fa] bg-[#eef5ff] p-4">
+              <p className="font-semibold text-[#174a8b]">Finish your teacher application</p>
+              <p className="mt-1 text-sm leading-6 text-[#47627f]">Your application is saved as a draft. Complete the details and submit it for administrator review.</p>
+              <a href="/dashboard/teacher-application" className="mt-3 inline-flex rounded-xl bg-[#174a8b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#123d75]">Complete application</a>
+            </div>
+          )}
           {role === "teacher" && (
             <a href="/dashboard/teacher" className="mt-5 inline-flex rounded-xl bg-[#174a8b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#123d75]">
               Open teacher assessment tools
