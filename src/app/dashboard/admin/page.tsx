@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ApplicationReviewActions from "./application-review-actions";
+import UserManagement from "./user-management";
 
 export const instant = false;
 
@@ -86,6 +87,18 @@ export default async function AdminDashboardPage({
     { label: "Teachers", value: teachersCount.count },
     { label: "Teacher applications", value: applicationsCount.count },
   ];
+
+    const { data: userData, error: userLoadError } =
+    await supabase.rpc("admin_list_users");
+
+  const managedUsers = (userData ?? []) as {
+    user_id: string;
+    full_name: string | null;
+    email: string | null;
+    account_status: string;
+    roles: string[];
+    created_at: string;
+  }[];
 
   const applicantIds = [
     ...new Set((pendingApplications.data ?? []).map((app) => app.user_id)),
@@ -181,6 +194,11 @@ export default async function AdminDashboardPage({
             </article>
           ))}
         </section>
+
+                <UserManagement
+          users={managedUsers}
+          loadError={!!userLoadError}
+        />
 
         {countError && (
           <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
