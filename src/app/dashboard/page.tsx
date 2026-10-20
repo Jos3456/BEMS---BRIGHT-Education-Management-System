@@ -39,7 +39,12 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const role = roles[0].role;
+  const rolePriority = ["admin", "teacher", "parent", "student"];
+
+    const role =
+      rolePriority.find((candidate) =>
+        roles.some((item) => item.role === candidate),
+      ) ?? roles[0].role;
 
   const { data: teacherApplication } = await supabase
     .from("teacher_applications")

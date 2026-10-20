@@ -14,9 +14,26 @@ function parseList(value: FormDataEntryValue | null) {
 async function submitApplication(formData: FormData) {
   "use server";
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || !user.email_confirmed_at) redirect("/login");
+    const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user || !user.email_confirmed_at) {
+    redirect("/login");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("account_status")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError || profile?.account_status !== "active") {
+    redirect("/login");
+  }
 
   const qualifications = String(formData.get("qualifications") ?? "").trim();
   const experience = String(formData.get("experience") ?? "").trim();

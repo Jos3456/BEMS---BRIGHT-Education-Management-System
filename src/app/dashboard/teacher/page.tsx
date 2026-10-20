@@ -18,10 +18,28 @@ const assessmentTypes = [
 async function createAssessment(formData: FormData) {
   "use server";
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+    const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
+  if (userError || !user || !user.email_confirmed_at) {
+    redirect("/login");
+  }
+
+  // Reject suspended or otherwise inactive accounts.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("account_status")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile || profile.account_status !== "active") {
+    redirect("/login");
+  }
+
+  // Confirm the user still has the teacher role.
   const { data: teacherRole } = await supabase
     .from("user_roles")
     .select("role")
