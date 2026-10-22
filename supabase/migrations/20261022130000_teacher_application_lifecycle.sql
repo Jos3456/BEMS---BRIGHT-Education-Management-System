@@ -79,6 +79,7 @@ drop trigger if exists teacher_application_status_history
 create trigger teacher_application_status_history
   after update of status on public.teacher_applications
   for each row execute function public.log_teacher_application_status_change();
+revoke all on function public.log_teacher_application_status_change() from public, anon, authenticated;
 
 create or replace function public.review_teacher_application(
   application_id uuid,
@@ -92,7 +93,6 @@ set search_path to ''
 as $function$
 declare
   applicant_id uuid;
-  previous_application_status public.teacher_application_status;
   admin_id uuid := (select auth.uid());
 begin
   if admin_id is null
@@ -108,8 +108,8 @@ begin
     raise exception 'Review notes must be 2000 characters or fewer';
   end if;
 
-  select ta.user_id, ta.status
-    into applicant_id, previous_application_status
+  select ta.user_id
+    into applicant_id
   from public.teacher_applications as ta
   where ta.id = application_id
     and ta.status in ('submitted', 'under_review', 'additional_info_requested')
