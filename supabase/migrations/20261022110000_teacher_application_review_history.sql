@@ -1,9 +1,10 @@
 -- BEMS: record teacher-application status changes in an administrator-only audit history.
--- This file is a repository change only. Do not apply to production until reviewed and validated.
+-- Repository migration only: validate in a safe environment before applying to production.
 
 create table if not exists public.teacher_application_review_history (
   id uuid primary key default gen_random_uuid(),
-  application_id uuid not null references public.teacher_applications(id) on delete cascade,
+  -- Keep the original application UUID even if the application/account is later deleted.
+  application_id uuid not null,
   applicant_id uuid references auth.users(id) on delete set null,
   actor_id uuid references auth.users(id) on delete set null,
   action text not null check (
@@ -39,7 +40,7 @@ revoke all on table public.teacher_application_review_history from public, anon,
 grant select on table public.teacher_application_review_history to authenticated;
 
 -- Seed one best-effort historical event for existing reviewed applications.
--- The original database only stores the latest review, so earlier reviews cannot be reconstructed.
+-- The original database stores only the latest review, so earlier reviews cannot be reconstructed.
 insert into public.teacher_application_review_history (
   application_id,
   applicant_id,
@@ -100,8 +101,8 @@ begin
     else 'status_changed'
   end;
 
-  -- Prefer the authenticated actor; reviewer_id is a fallback for trusted server-side actions.
-  event_actor := coalesce((select auth.uid()), new.reviewer_id, old.reviewer_id);
+  -- Do not attribute a service-role/background update to a previous reviewer.
+  event_actor := (select auth.uid());
 
   insert into public.teacher_application_review_history (
     application_id,
@@ -120,8 +121,8 @@ begin
     event_action,
     old.status,
     new.status,
-    new.review_notes,
-    coalesce(new.reviewed_at, new.updated_at, now())
+    coalesce(new.review_notes, old.review_notes),
+    now()
   );
 
   return new;
@@ -137,3 +138,5 @@ create trigger teacher_application_status_history
   when (old.status is distinct from new.status)
   execute function public.log_teacher_application_status_change();
 
+-- This function is intended only for the trigger, not as a public RPC endpoint.
+revoke all on function public.log_teacher_application_status_change() from public, anon, authenticated;
