@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ApplicationReviewActions from "./application-review-actions";
 import UserManagement from "./user-management";
+import ResourcesManager from "./resources-manager";
 
 export const instant = false;
 
@@ -199,6 +200,7 @@ export default async function AdminDashboardPage({
           users={managedUsers}
           loadError={!!userLoadError}
         />
+        <ResourcesManager />
 
         {countError && (
           <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

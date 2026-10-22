@@ -11,29 +11,49 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [suspended, setSuspended] = useState(false);
 
-  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setLoading(true);
+async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setError("");
+  setSuspended(false);
+  setLoading(true);
 
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const supabase = createClient();
 
-      if (error) {
-        setError(error.message);
-        return;
-      }
+  try {
+    const { error: loginError } =
+      await supabase.auth.signInWithPassword({ email, password });
 
-      router.push("/dashboard");
-      router.refresh();
-    } catch {
-      setError("Unable to connect. Check your Supabase configuration.");
-    } finally {
-      setLoading(false);
+    if (loginError) {
+      setError(loginError.message);
+      return;
     }
+
+    // Check status immediately after successful authentication.
+    const { data: status, error: statusError } =
+      await supabase.rpc("current_account_status");
+
+    if (statusError || !status) {
+      await supabase.auth.signOut();
+      setError("We couldn't verify your account status. Please try again.");
+      return;
+    }
+
+    if (status === "suspended" || status === "disabled") {
+      await supabase.auth.signOut();
+      setSuspended(true);
+      return;
+    }
+
+    router.push("/dashboard");
+    router.refresh();
+  } catch {
+    setError("Unable to connect. Please check your connection and try again.");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <main
@@ -45,6 +65,44 @@ export default function LoginPage() {
         backgroundPosition: "center",
       }}
     >
+      {suspended && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-[#10243d]/60 p-4 backdrop-blur-sm"
+    role="presentation"
+  >
+    <section
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="suspended-title"
+      aria-describedby="suspended-description"
+      className="w-full max-w-md rounded-2xl bg-white p-7 text-[#17324f] shadow-2xl"
+    >
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl font-bold text-red-700">
+        !
+      </div>
+
+      <h2 id="suspended-title" className="text-2xl font-bold">
+        Account access restricted
+      </h2>
+
+      <p
+        id="suspended-description"
+        className="mt-3 leading-7 text-[#61758b]"
+      >
+        Your account has been suspended or disabled. Please contact the
+        BEMS administrator for assistance.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => setSuspended(false)}
+        className="mt-6 w-full rounded-xl bg-[#174a8b] px-5 py-3 font-semibold text-white hover:bg-[#10396d]"
+      >
+        Return to sign in
+      </button>
+    </section>
+  </div>
+)}
       <Link
         href="/"
         className="absolute left-5 top-5 z-10 inline-flex items-center gap-3 rounded-full border border-white/80 bg-white/85 px-4 py-2.5 shadow-sm backdrop-blur-md transition hover:-translate-y-0.5 hover:bg-white sm:left-8 sm:top-8"
