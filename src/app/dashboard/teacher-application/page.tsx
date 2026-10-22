@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import RejectionNotice from "./rejection-notice";
 
 export const instant = false;
 
@@ -88,7 +89,7 @@ export default async function TeacherApplicationPage({ searchParams }: Applicati
 
   const { data: application, error } = await supabase
     .from("teacher_applications")
-    .select("status, qualifications, experience, subjects, curricula")
+    .select("status, qualifications, experience, subjects, curricula, review_notes")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -110,11 +111,24 @@ export default async function TeacherApplicationPage({ searchParams }: Applicati
       <main className="min-h-screen bg-[#f7faff] px-4 py-10 text-[#17324f]">
         <section className="mx-auto max-w-2xl rounded-2xl border border-[#e1eaf5] bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold">Teacher application</h1>
+          {application.status === "rejected" && (
+            <RejectionNotice notes={application.review_notes ?? null} />
+          )}
           {application.status === "approved" ? (
             <div role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
               <h2 className="font-semibold">Congratulations! Your teacher application has been approved.</h2>
               <p className="mt-1 text-sm leading-6">Your teacher role is active. You can now access your teacher tools.</p>
               <a href="/dashboard/teacher" className="mt-3 inline-flex rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">Open teacher tools</a>
+            </div>
+          ) : application.status === "rejected" ? (
+            <div role="status" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-900">
+              <h2 className="font-semibold">Application not approved</h2>
+              <p className="mt-1 text-sm leading-6">Your application has been rejected. If an administrator reopens it, this page will let you revise and resubmit it. You do not currently have teacher access.</p>
+            </div>
+          ) : application.status === "suspended" ? (
+            <div role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+              <h2 className="font-semibold">Teacher access has been suspended</h2>
+              <p className="mt-1 text-sm leading-6">Your account and application history remain intact, but the teacher role is no longer active. Please contact BEMS support if you need clarification.</p>
             </div>
           ) : (
             <p className="mt-3 text-sm leading-6 text-[#71849b]">Your application status is <strong className="capitalize text-[#174a8b]">{statusLabel}</strong>.</p>
