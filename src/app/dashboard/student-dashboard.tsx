@@ -31,8 +31,8 @@ const hubItems: HubItem[] = [
   { id: "teachers", icon: "♧", title: "My teachers", detail: "Who is helping you learn" },
   { id: "reports", icon: "▤", title: "Learning reports", detail: "Teacher summaries" },
   { id: "classes", icon: "▣", title: "Online classes", detail: "Lessons in one place", soon: true },
-  { id: "materials", icon: "▥", title: "Study materials", detail: "Notes and revision guides", soon: true },
-  { id: "papers", icon: "▧", title: "Past papers", detail: "Prepare for examinations", soon: true },
+  { id: "materials", icon: "▥", title: "Study materials", detail: "Notes and revision guides" },
+  { id: "papers", icon: "▧", title: "Past papers", detail: "Prepare for examinations" },
   { id: "quiz", icon: "✎", title: "Practice question", detail: "Test what you know" },
 ];
 
@@ -542,11 +542,91 @@ export default function StudentDashboard({
                 </div>
               )}
 
-              {(section === "classes" || section === "materials" || section === "papers") && (
-                <div className="mt-6">
-                  <EmptyState icon="…" title={comingSoon[section].title} body={comingSoon[section].body} />
-                </div>
-              )}
+              
+            {(section === "classes" || section === "materials" || section === "papers") && (
+              <div className="mt-6">
+                {section === "classes" ? (
+                  <EmptyState
+                    icon="▣"
+                    title={comingSoon.classes.title}
+                    body={comingSoon.classes.body}
+                  />
+                ) : (
+                  (() => {
+                    const resources = (data.resources ?? []).filter((resource) => {
+                      const isPaper = /paper|exam/i.test(resource.category);
+                      return section === "papers" ? isPaper : !isPaper;
+                    });
+
+                    return resources.length === 0 ? (
+                      <EmptyState
+                        icon="▥"
+                        title={
+                          section === "materials"
+                            ? "No study materials yet"
+                            : "No past papers yet"
+                        }
+                        body={
+                          section === "materials"
+                            ? "Published notes and revision guides will appear here when they are available."
+                            : "Published past papers will appear here when they are available."
+                        }
+                      />
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {resources.map((resource) => (
+                          <article
+                            key={resource.id}
+                            className="rounded-2xl border border-[var(--border)] p-5"
+                          >
+                            <p className="text-xs font-semibold uppercase tracking-wide opacity-60">
+                              {resource.category || "Learning resource"}
+                            </p>
+
+                            <h3 className="mt-2 text-lg font-semibold">
+                              {resource.title}
+                            </h3>
+
+                            <p className="mt-2 text-sm opacity-75">
+                              {[resource.subject, resource.curriculum, resource.education_level]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+
+                            {resource.description && (
+                              <p className="mt-3 text-sm">{resource.description}</p>
+                            )}
+
+                            {resource.file_name && (
+                              <p className="mt-3 break-words text-xs opacity-60">
+                                File: {resource.file_name}
+                              </p>
+                            )}
+
+                            {resource.signedUrl ? (
+                              <a
+                                href={resource.signedUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                download
+                                className="mt-4 inline-flex rounded-xl bg-[var(--foreground)] px-4 py-2 text-sm font-semibold text-[var(--background)]"
+                              >
+                                Download resource
+                              </a>
+                            ) : (
+                              <p className="mt-4 text-sm opacity-70">
+                                Download link unavailable. Please refresh and try again.
+                              </p>
+                            )}
+                          </article>
+                        ))}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+            )}
+
 
               {section === "quiz" && (
                 <div className="mt-6 rounded-[1.5rem] border border-[#e1eaf5] bg-white p-5 sm:p-7">

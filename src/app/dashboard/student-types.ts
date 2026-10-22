@@ -49,6 +49,19 @@ export type ReportRow = {
   publishedAt: string | null;
 };
 
+export type StudentResource = {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  curriculum: string;
+  subject: string;
+  education_level: string;
+  file_name: string;
+  file_size: number;
+  signedUrl: string | null;
+};
+
 export type StudentData = {
   results: ResultRow[];
   subjects: SubjectSummary[];
@@ -56,6 +69,7 @@ export type StudentData = {
   upcoming: UpcomingRow[];
   teachers: TeacherRow[];
   reports: ReportRow[];
+  resources: StudentResource[];
   loadFailed: boolean;
 };
 
@@ -66,6 +80,7 @@ export const emptyStudentData: StudentData = {
   upcoming: [],
   teachers: [],
   reports: [],
+  resources: [],
   loadFailed: false,
 };
 

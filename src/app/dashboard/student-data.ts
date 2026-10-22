@@ -1,15 +1,16 @@
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   ReportRow,
   ResultRow,
   StudentData,
+  StudentResource,
   SubjectSummary,
   TeacherRow,
   UpcomingRow,
 } from "./student-types";
 
-// Supabase can return an embedded relation as an object or a one-element array
-// depending on how the relationship is inferred. Accept both.
+// Supabase can return an embedded relation as an object or a one-element array.
 function one<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
@@ -19,30 +20,48 @@ function round1(value: number) {
   return Math.round(value * 10) / 10;
 }
 
-type GradeRule = { grade_scale_id: string; grade_label: string; min_percentage: number };
+type GradeRule = {
+  grade_scale_id: string;
+  grade_label: string;
+  min_percentage: number;
+};
 
-function gradeFor(percentage: number, scaleId: string | null, rules: GradeRule[]) {
+function gradeFor(
+  percentage: number,
+  scaleId: string | null,
+  rules: GradeRule[],
+) {
   if (!scaleId) return null;
+
   const match = rules
     .filter((rule) => rule.grade_scale_id === scaleId)
-    .sort((a, b) => Number(b.min_percentage) - Number(a.min_percentage))
+    .sort(
+      (a, b) =>
+        Number(b.min_percentage) - Number(a.min_percentage),
+    )
     .find((rule) => percentage >= Number(rule.min_percentage));
+
   return match ? match.grade_label : null;
 }
 
 /**
- * Loads the signed-in learner's own records. Row Level Security already limits
- * learners to published results, and we also filter explicitly so the intent is
- * visible and does not depend on policy alone.
+ * Loads the signed-in learner's records and published learning resources.
  */
 export async function loadStudentData(
   supabase: SupabaseClient,
   learnerId: string,
 ): Promise<StudentData> {
-  // East Africa Time date string (YYYY-MM-DD) for "upcoming" comparisons.
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Africa/Nairobi",
+  });
 
-  const [resultsRes, upcomingRes, assignmentsRes, reportsRes] = await Promise.all([
+  const [
+    resultsRes,
+    upcomingRes,
+    assignmentsRes,
+    reportsRes,
+    resourcesRes,
+  ] = await Promise.all([
     supabase
       .from("assessment_results")
       .select(
@@ -50,21 +69,29 @@ export async function loadStudentData(
       )
       .eq("learner_id", learnerId)
       .eq("status", "published")
-      .order("graded_at", { ascending: false, nullsFirst: false })
+      .order("graded_at", {
+        ascending: false,
+        nullsFirst: false,
+      })
       .limit(200),
+
     supabase
       .from("learning_assessments")
-      .select("id, title, subject_name, course_name, assessment_type, max_score, due_date")
+      .select(
+        "id, title, subject_name, course_name, assessment_type, max_score, due_date",
+      )
       .eq("status", "published")
       .gte("due_date", today)
       .order("due_date", { ascending: true })
       .limit(20),
+
     supabase
       .from("teacher_learner_assignments")
       .select("id, teacher_id, subject_name, course_name")
       .eq("learner_id", learnerId)
       .eq("status", "active")
       .order("subject_name", { ascending: true }),
+
     supabase
       .from("learner_reports")
       .select(
@@ -72,41 +99,96 @@ export async function loadStudentData(
       )
       .eq("learner_id", learnerId)
       .eq("status", "published")
-      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("published_at", {
+        ascending: false,
+        nullsFirst: false,
+      })
       .limit(20),
+
+    supabase
+      .from("learning_resources")
+      .select(
+        "id, title, category, description, curriculum, subject, education_level, file_path, file_name, file_size",
+      )
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   const loadFailed = Boolean(
-    resultsRes.error || upcomingRes.error || assignmentsRes.error || reportsRes.error,
+    resultsRes.error ||
+      upcomingRes.error ||
+      assignmentsRes.error ||
+      reportsRes.error ||
+      resourcesRes.error,
   );
 
-  // Grade labels come from admin-configured scales, never hard-coded boundaries.
+  // Generate temporary download links for files in the private storage bucket.
+  const resources: StudentResource[] = await Promise.all(
+    (resourcesRes.data ?? []).map(async (row) => {
+      const { data: signedData } = await supabase.storage
+        .from("learning-resources")
+        .createSignedUrl(row.file_path, 60 * 60);
+
+      return {
+        id: row.id,
+        title: row.title,
+        category: row.category ?? "",
+        description: row.description ?? "",
+        curriculum: row.curriculum ?? "",
+        subject: row.subject ?? "",
+        education_level: row.education_level ?? "",
+        file_name: row.file_name ?? "",
+        file_size: Number(row.file_size ?? 0),
+        signedUrl: signedData?.signedUrl ?? null,
+      };
+    }),
+  );
+
+  // Load admin-configured grading rules for assessments.
   const scaleIds = Array.from(
     new Set(
       (resultsRes.data ?? [])
-        .map((row) => one(row.learning_assessments)?.grade_scale_id as string | null | undefined)
+        .map(
+          (row) =>
+            one(row.learning_assessments)?.grade_scale_id as
+              | string
+              | null
+              | undefined,
+        )
         .filter((id): id is string => Boolean(id)),
     ),
   );
+
   let rules: GradeRule[] = [];
+
   if (scaleIds.length > 0) {
     const { data } = await supabase
       .from("grade_scale_rules")
       .select("grade_scale_id, grade_label, min_percentage")
       .in("grade_scale_id", scaleIds);
+
     rules = (data ?? []) as GradeRule[];
   }
 
   const results: ResultRow[] = [];
+
   for (const row of resultsRes.data ?? []) {
     const assessment = one(row.learning_assessments);
-    // A result whose assessment we cannot read (e.g. a revoked teacher link) is skipped
-    // rather than shown without context.
+
     if (!assessment) continue;
+
     const maxScore = Number(assessment.max_score);
-    const score = row.score === null || row.score === undefined ? null : Number(row.score);
+    const score =
+      row.score === null || row.score === undefined
+        ? null
+        : Number(row.score);
+
     const percentage =
-      score !== null && maxScore > 0 ? round1(Math.min((score / maxScore) * 100, 100)) : null;
+      score !== null && maxScore > 0
+        ? round1(Math.min((score / maxScore) * 100, 100))
+        : null;
+
     results.push({
       id: row.id,
       title: assessment.title,
@@ -116,26 +198,48 @@ export async function loadStudentData(
       score,
       maxScore,
       percentage,
-      grade: percentage === null ? null : gradeFor(percentage, assessment.grade_scale_id ?? null, rules),
+      grade:
+        percentage === null
+          ? null
+          : gradeFor(
+              percentage,
+              assessment.grade_scale_id ?? null,
+              rules,
+            ),
       feedback: row.teacher_feedback ?? null,
-      date: assessment.assessment_date ?? (row.graded_at ? String(row.graded_at).slice(0, 10) : null),
+      date:
+        assessment.assessment_date ??
+        (row.graded_at ? String(row.graded_at).slice(0, 10) : null),
     });
   }
 
-  const scored = results.filter((r) => r.percentage !== null);
+  const scored = results.filter((result) => result.percentage !== null);
+
   const overallAverage = scored.length
-    ? round1(scored.reduce((sum, r) => sum + (r.percentage as number), 0) / scored.length)
+    ? round1(
+        scored.reduce(
+          (sum, result) => sum + (result.percentage as number),
+          0,
+        ) / scored.length,
+      )
     : null;
 
   const bySubject = new Map<string, number[]>();
-  for (const r of scored) {
-    bySubject.set(r.subject, [...(bySubject.get(r.subject) ?? []), r.percentage as number]);
+
+  for (const result of scored) {
+    bySubject.set(result.subject, [
+      ...(bySubject.get(result.subject) ?? []),
+      result.percentage as number,
+    ]);
   }
+
   const subjects: SubjectSummary[] = Array.from(bySubject.entries())
     .map(([subject, values]) => ({
       subject,
       count: values.length,
-      average: round1(values.reduce((a, b) => a + b, 0) / values.length),
+      average: round1(
+        values.reduce((a, b) => a + b, 0) / values.length,
+      ),
     }))
     .sort((a, b) => a.subject.localeCompare(b.subject));
 
@@ -149,23 +253,38 @@ export async function loadStudentData(
     maxScore: Number(row.max_score),
   }));
 
-  // Teacher names live in profiles. If a policy hides them we still show the subject.
+  // Teacher names live in profiles.
   const teacherIds = Array.from(
-    new Set((assignmentsRes.data ?? []).map((row) => row.teacher_id as string)),
+    new Set(
+      (assignmentsRes.data ?? []).map(
+        (row) => row.teacher_id as string,
+      ),
+    ),
   );
+
   const names = new Map<string, string>();
+
   if (teacherIds.length > 0) {
-    const { data } = await supabase.from("profiles").select("id, full_name").in("id", teacherIds);
-    for (const p of data ?? []) {
-      if (p.full_name) names.set(p.id, p.full_name);
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", teacherIds);
+
+    for (const profile of data ?? []) {
+      if (profile.full_name) {
+        names.set(profile.id, profile.full_name);
+      }
     }
   }
-  const teachers: TeacherRow[] = (assignmentsRes.data ?? []).map((row) => ({
-    id: row.id,
-    teacherName: names.get(row.teacher_id) ?? null,
-    subject: row.subject_name,
-    course: row.course_name ?? null,
-  }));
+
+  const teachers: TeacherRow[] = (assignmentsRes.data ?? []).map(
+    (row) => ({
+      id: row.id,
+      teacherName: names.get(row.teacher_id) ?? null,
+      subject: row.subject_name,
+      course: row.course_name ?? null,
+    }),
+  );
 
   const reports: ReportRow[] = (reportsRes.data ?? []).map((row) => ({
     id: row.id,
@@ -178,5 +297,14 @@ export async function loadStudentData(
     publishedAt: row.published_at ?? null,
   }));
 
-  return { results, subjects, overallAverage, upcoming, teachers, reports, loadFailed };
+  return {
+    results,
+    subjects,
+    overallAverage,
+    upcoming,
+    teachers,
+    reports,
+    resources,
+    loadFailed,
+  };
 }
