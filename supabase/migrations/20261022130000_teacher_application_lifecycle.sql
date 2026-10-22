@@ -23,6 +23,37 @@ create index if not exists teacher_application_review_history_application_create
 create index if not exists teacher_application_review_history_applicant_created_idx
   on public.teacher_application_review_history (applicant_id, created_at desc);
 
+-- Seed the last known decision for applications reviewed before history tracking existed.
+-- This preserves their current review note and reviewer when the application is later reopened or suspended.
+insert into public.teacher_application_review_history (
+  application_id, applicant_id, actor_id, action,
+  previous_status, new_status, notes, created_at
+)
+select
+  ta.id,
+  ta.user_id,
+  ta.reviewer_id,
+  case
+    when ta.status = 'approved'::public.teacher_application_status then 'approved'
+    when ta.status = 'rejected'::public.teacher_application_status then 'rejected'
+    else 'status_changed'
+  end,
+  null,
+  ta.status,
+  ta.review_notes,
+  coalesce(ta.reviewed_at, ta.updated_at, ta.created_at)
+from public.teacher_applications as ta
+where ta.status in (
+  'approved'::public.teacher_application_status,
+  'rejected'::public.teacher_application_status,
+  'suspended'::public.teacher_application_status
+)
+and not exists (
+  select 1
+  from public.teacher_application_review_history as h
+  where h.application_id = ta.id
+);
+
 alter table public.teacher_application_review_history enable row level security;
 drop policy if exists teacher_application_review_history_admin_select
   on public.teacher_application_review_history;
