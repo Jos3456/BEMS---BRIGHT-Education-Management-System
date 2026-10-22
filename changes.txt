@@ -11,4 +11,5 @@
  - Grade 1
  - Grade 2
 - etc for all grades available in our system's curriculums
-4. 
+4. Teaching experience should not be optional
+5. add drop downs where necessary

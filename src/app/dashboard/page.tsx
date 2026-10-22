@@ -35,22 +35,35 @@ export default async function DashboardPage() {
     .select("role")
     .eq("user_id", user.id);
 
-  if (rolesError || !roles || roles.length === 0) {
+
+  if (rolesError || !roles) {
+    redirect("/login");
+  }
+
+  const { data: teacherApplication, error: teacherApplicationError } =
+    await supabase
+      .from("teacher_applications")
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+  // Users without a role may continue only if they have a teacher application.
+  if (
+    roles.length === 0 &&
+    (teacherApplicationError || !teacherApplication)
+  ) {
     redirect("/login");
   }
 
   const rolePriority = ["admin", "teacher", "parent", "student"];
 
-    const role =
-      rolePriority.find((candidate) =>
-        roles.some((item) => item.role === candidate),
-      ) ?? roles[0].role;
+  const role =
+    roles.length === 0
+      ? "teacher_applicant"
+      : rolePriority.find((candidate) =>
+          roles.some((item) => item.role === candidate),
+        ) ?? roles[0].role;
 
-  const { data: teacherApplication } = await supabase
-    .from("teacher_applications")
-    .select("status")
-    .eq("user_id", user.id)
-    .maybeSingle();
 
   async function signOut() {
     "use server";
@@ -74,6 +87,7 @@ export default async function DashboardPage() {
   const portalNames: Record<string, string> = {
     student: "Student Portal",
     teacher: "Teacher Portal",
+    teacher_applicant: "Teacher Application Portal",
     parent: "Parent / Guardian Portal",
     admin: "Administration Portal",
   };
@@ -121,7 +135,17 @@ export default async function DashboardPage() {
         <section className="mt-5 rounded-[1.5rem] border border-[#e1eaf5] bg-white p-6">
           <h3 className="text-lg font-semibold">Your BEMS dashboard</h3>
           <p className="mt-2 leading-7 text-[#71849b]">
-            Your {role === "teacher" ? "teaching tools and application status" : role === "parent" ? "linked learners and learning updates" : "administration tools"} will appear here as those features are built.
+            
+            Your {role === "teacher_applicant"
+              ? "teacher application and its review status"
+              : role === "teacher"
+                ? "teaching tools and application status"
+                : role === "parent"
+                  ? "linked learners and learning updates"
+                  : role === "student"
+                    ? "learning resources and student tools"
+                    : "administration tools"} will appear here as those features are built.
+
           </p>
           {teacherApplication?.status === "draft" && (
             <div className="mt-5 rounded-xl border border-[#dbe8fa] bg-[#eef5ff] p-4">
