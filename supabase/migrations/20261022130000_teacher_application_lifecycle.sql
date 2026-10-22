@@ -131,6 +131,10 @@ begin
     insert into public.user_roles (user_id, role, assigned_by)
     values (applicant_id, 'teacher'::public.app_role, admin_id)
     on conflict (user_id, role) do nothing;
+  elsif decision = 'rejected' then
+    -- A rejection must never leave teaching access in place; other roles are untouched.
+    delete from public.user_roles
+    where user_id = applicant_id and role = 'teacher'::public.app_role;
   end if;
 end;
 $function$;
