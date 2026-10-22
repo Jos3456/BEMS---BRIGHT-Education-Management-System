@@ -1,1 +1,14 @@
 1. allow user to view password in sign up and sign in forms
+2. on the admins page, when selecting the curriculum, make it a drop down with these options:
+ - IGCSE-Cambridge
+ - IGCSE-Pearson
+ - IGCSE General
+ - Kenyan CBC
+ - University Level
+ - American System
+ - we'll add more
+3. Same witrh the grade - we'll add
+ - Grade 1
+ - Grade 2
+- etc for all grades available in our system's curriculums
+4. 

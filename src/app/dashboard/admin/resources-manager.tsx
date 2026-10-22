@@ -54,6 +54,7 @@ const fieldClass =
 
 export default function ResourcesManager() {
   const [resources, setResources] = useState<Resource[]>([]);
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("notes");
   const [description, setDescription] = useState("");
@@ -81,6 +82,46 @@ export default function ResourcesManager() {
     setResources((data ?? []) as Resource[]);
   }, []);
 
+    function startEditing(resource: Resource) {
+    setEditingResource(resource);
+    setTitle(resource.title);
+    setCategory(resource.category);
+    setDescription(resource.description ?? "");
+    setCurriculum(resource.curriculum ?? "General");
+    setSubject(resource.subject ?? "");
+    setLevel(resource.education_level ?? "");
+    setStatus(resource.status);
+    setFile(null);
+    setMessage("");
+    setError("");
+
+    document.getElementById("resource-title")?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+
+  function cancelEditing() {
+    setEditingResource(null);
+    setTitle("");
+    setCategory("notes");
+    setDescription("");
+    setCurriculum("General");
+    setSubject("");
+    setLevel("");
+    setStatus("draft");
+    setFile(null);
+
+    const input = document.getElementById(
+      "resource-file",
+    ) as HTMLInputElement | null;
+
+    if (input) input.value = "";
+
+    setError("");
+    setMessage("Editing cancelled.");
+  }
+
 useEffect(() => {
   const timer = setTimeout(() => {
     void loadResources();
@@ -94,18 +135,20 @@ useEffect(() => {
     setError("");
     setMessage("");
 
-    if (!file) {
+    if (!file && !editingResource) {
       setError("Choose a file to upload.");
       return;
     }
 
-    if (file.size <= 0 || file.size > MAX_FILE_SIZE) {
+        if (file && (file.size <= 0 || file.size > MAX_FILE_SIZE)) {
       setError("The file must be smaller than or equal to 50 MB.");
       return;
     }
 
-    if (!allowedTypes.includes(file.type)) {
-      setError("That file type is not supported. Choose a PDF, document, image, text file, or MP4 video.");
+    if (file && !allowedTypes.includes(file.type)) {
+      setError(
+        "That file type is not supported. Choose a PDF, document, image, text file, or MP4 video.",
+      );
       return;
     }
 
@@ -121,6 +164,51 @@ useEffect(() => {
 
       if (userError || !user) {
         setError("Your session has expired. Please sign in again.");
+        return;
+      }
+
+            if (editingResource) {
+        const { error: updateError } = await supabase
+          .from("learning_resources")
+          .update({
+            title: title.trim(),
+            category,
+            description: description.trim(),
+            curriculum: curriculum.trim() || "General",
+            subject: subject.trim(),
+            education_level: level.trim(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingResource.id);
+
+        if (updateError) {
+          setError(`Resource could not be updated: ${updateError.message}`);
+          return;
+        }
+
+        setEditingResource(null);
+        setTitle("");
+        setCategory("notes");
+        setDescription("");
+        setCurriculum("General");
+        setSubject("");
+        setLevel("");
+        setStatus("draft");
+        setFile(null);
+
+        const input = document.getElementById(
+          "resource-file",
+        ) as HTMLInputElement | null;
+
+        if (input) input.value = "";
+
+        setMessage("Resource updated successfully.");
+        await loadResources();
+        return;
+      }
+
+            if (!file) {
+        setError("Choose a file to upload.");
         return;
       }
 
@@ -298,6 +386,7 @@ useEffect(() => {
         <label className="text-sm font-semibold">
           Resource title *
           <input
+            id="resource-title"
             className={fieldClass}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -375,12 +464,16 @@ useEffect(() => {
             id="resource-file"
             className={fieldClass}
             type="file"
+            disabled={!!editingResource}
+            required={!editingResource}
             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.mp4"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            required
+            
           />
           <span className="mt-1 block text-xs font-normal text-[#71849b]">
-            PDF, Office documents, text, images or MP4 video.
+            {editingResource
+              ? "The existing uploaded file will be kept when you save changes."
+              : "PDF, Office documents, text, images or MP4 video."}
           </span>
         </label>
 
@@ -402,8 +495,22 @@ useEffect(() => {
             disabled={busy}
             className="w-full rounded-xl bg-[#174a8b] px-5 py-3 font-semibold text-white transition hover:bg-[#10396d] disabled:opacity-60"
           >
-            {busy ? "Please wait..." : "Upload resource"}
+            {busy
+              ? "Please wait..."
+              : editingResource
+                ? "Save changes"
+                : "Upload resource"}
           </button>
+          {editingResource && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={cancelEditing}
+              className="ml-2 rounded-xl border border-[#dce7f3] px-5 py-3 font-semibold disabled:opacity-60"
+            >
+              Cancel edit
+            </button>
+        )}
         </div>
       </form>
 
@@ -454,6 +561,13 @@ useEffect(() => {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => startEditing(resource)}
+                    className="rounded-lg border border-[#dce7f3] px-3 py-2 text-sm font-semibold hover:bg-[#f7faff] disabled:opacity-60">
+                    Edit
+                  </button>
                   <button
                     type="button"
                     disabled={busy}
