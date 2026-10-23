@@ -17,7 +17,7 @@ const pathways = [
     eyebrow: "FOR TEACHERS",
     title: "Put your knowledge to work.",
     description:
-      "Bring your experience to a growing learning community and help students reach their potential.",
+      "Bring your experience to a growing learning community and help students reach their full potential.",
     icon: "✳",
     href: "/signup",
     tone: "mint",
@@ -25,7 +25,7 @@ const pathways = [
   },
   {
     number: "03",
-    eyebrow: "FOR FAMILIES",
+    eyebrow: "FOR PARENTS",
     title: "Feel closer to their progress.",
     description:
       "Keep learning, lesson plans and important updates connected in one trusted place.",
@@ -50,7 +50,7 @@ export default function HomePage() {
       className="min-h-screen overflow-x-hidden text-[#17324f]"
       style={{
         backgroundImage:
-          "linear-gradient(rgba(247,250,255,0.84), rgba(247,250,255,0.90)), url('https://raw.githubusercontent.com/Jos3456/BEMS---BRIGHT-Education-Management-System/main/classroom.jpg')",
+          "linear-gradient(rgba(247,250,255,0.84), rgba(247, 250, 255, 0.87)), url('public/classroom.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center top",
         backgroundAttachment: "fixed",
