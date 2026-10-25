@@ -13,3 +13,4 @@
 - etc for all grades available in our system's curriculums
 4. Teaching experience should not be optional
 5. add drop downs where necessary
+6. teachers can create lessons and invite students to their lessons - and students can book teachers too
