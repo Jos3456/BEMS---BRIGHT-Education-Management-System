@@ -71,6 +71,13 @@ export type StudentData = {
   reports: ReportRow[];
   resources: StudentResource[];
   loadFailed: boolean;
+  loadErrors: {
+    results: boolean;
+    upcoming: boolean;
+    teachers: boolean;
+    reports: boolean;
+    resources: boolean;
+  };
 };
 
 export const emptyStudentData: StudentData = {
@@ -82,6 +89,13 @@ export const emptyStudentData: StudentData = {
   reports: [],
   resources: [],
   loadFailed: false,
+  loadErrors: {
+    results: false,
+    upcoming: false,
+    teachers: false,
+    reports: false,
+    resources: false,
+  },
 };
 
 export const assessmentTypeLabels: Record<string, string> = {
