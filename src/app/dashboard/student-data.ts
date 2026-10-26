@@ -75,6 +75,9 @@ export async function loadStudentData(
       })
       .limit(200),
 
+    // Row-level security limits this query to assessments matching this learner's
+    // active teacher assignments. Keep the query broad enough for Supabase to apply
+    // those policies; never replace RLS with client-only filtering.
     supabase
       .from("learning_assessments")
       .select(
