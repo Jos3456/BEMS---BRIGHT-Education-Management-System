@@ -124,7 +124,7 @@ export async function assignLearnersToTeacher(formData: FormData) {
     if (existing) {
       const { error: updateError } = await supabase
         .from("teacher_learner_assignments")
-        .update({ status: "active", created_by: user.id })
+        .update({ status: "active" })
         .eq("id", existing.id);
 
       if (updateError) redirect("/dashboard/admin/assignments?error=save_failed");
