@@ -126,12 +126,14 @@ export async function assignLearnersToTeacher(formData: FormData) {
     }
 
     if (existing) {
-      const { error: updateError } = await supabase
+      const { data: updated, error: updateError } = await supabase
         .from("teacher_learner_assignments")
         .update({ status: "active" })
-        .eq("id", existing.id);
+        .eq("id", existing.id)
+        .select("id")
+        .maybeSingle();
 
-      if (updateError) {
+      if (updateError || !updated) {
         failed += 1;
         continue;
       }
