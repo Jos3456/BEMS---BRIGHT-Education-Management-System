@@ -50,7 +50,7 @@ export default function HomePage() {
       className="min-h-screen overflow-x-hidden text-[#17324f]"
       style={{
         backgroundImage:
-          "linear-gradient(rgba(247,250,255,0.84), rgba(247, 250, 255, 0.87)), url('public/classroom.jpg')",
+          "linear-gradient(rgba(247,250,255,0.84), rgba(247, 250, 255, 0.87)), url('classroom.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center top",
         backgroundAttachment: "fixed",
