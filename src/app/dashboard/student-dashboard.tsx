@@ -135,12 +135,14 @@ function IconBox({ children, className = "" }: { children: React.ReactNode; clas
   );
 }
 
-function EmptyState({ icon, title, body }: { icon: string; title: string; body: string }) {
+function EmptyState({ icon, title, body, loadError = false }: { icon: string; title: string; body: string; loadError?: boolean }) {
   return (
     <div className="rounded-[1.5rem] border border-dashed border-[#d5e3f2] bg-white/80 p-7 text-center sm:p-9">
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf3ff] text-xl text-[#2c72b8]">{icon}</span>
       <h2 className="mt-4 text-lg font-semibold text-[#17324f]">{title}</h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#71849b]">{body}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#71849b]">
+        {loadError ? "We couldn't load this section just now. Refresh the page to try again." : body}
+      </p>
     </div>
   );
 }
@@ -383,7 +385,7 @@ export default function StudentDashboard({
                     {recent.length > 0 && <button onClick={() => goTo("grades")} className="text-sm font-semibold text-[#2c72b8] hover:underline">See all →</button>}
                   </div>
                   {recent.length === 0 ? (
-                    <p className="mt-4 rounded-2xl bg-[#f7faff] p-4 text-sm leading-6 text-[#71849b]">No results have been published yet. When a teacher shares your marks, the latest ones will show here.</p>
+                    <p className="mt-4 rounded-2xl bg-[#f7faff] p-4 text-sm leading-6 text-[#71849b]">{data.loadErrors.results ? "We couldn't load your results. Refresh the page to try again." : "No results have been published yet. When a teacher shares your marks, the latest ones will show here."}</p>
                   ) : (
                     <ul className="mt-4 space-y-3">
                       {recent.map((r) => {
@@ -413,7 +415,7 @@ export default function StudentDashboard({
                       <p className="mt-1 text-sm leading-6 text-[#617d7a]">{nextUp.subject} · {typeLabel(nextUp.type)} · {formatDate(nextUp.dueDate, true)}</p>
                     </>
                   ) : (
-                    <p className="mt-2 text-sm leading-6 text-[#617d7a]">Nothing is due right now. Use the time to revise something you found tricky.</p>
+                    <p className="mt-2 text-sm leading-6 text-[#617d7a]">{data.loadErrors.upcoming ? "We couldn't load upcoming work. Refresh the page to try again." : "Nothing is due right now. Use the time to revise something you found tricky."}</p>
                   )}
                   <button onClick={() => goTo("schedule")} className="mt-4 text-sm font-semibold text-[#247a6a] hover:underline">See upcoming work →</button>
                 </section>
@@ -453,7 +455,7 @@ export default function StudentDashboard({
               {section === "grades" && (
                 <div className="mt-6">
                   {data.results.length === 0 ? (
-                    <EmptyState icon="↗" title="Your results will appear here" body="No marks have been published yet. When your teacher publishes results, your scores, grades and feedback will be shown here." />
+                    <EmptyState icon="↗" title={data.loadErrors.results ? "Results couldn't be loaded" : "Your results will appear here"} body="No marks have been published yet. When your teacher publishes results, your scores, grades and feedback will be shown here." loadError={data.loadErrors.results} />
                   ) : (
                     <>
                       <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
@@ -504,7 +506,7 @@ export default function StudentDashboard({
               {section === "schedule" && (
                 <div className="mt-6">
                   {data.upcoming.length === 0 ? (
-                    <EmptyState icon="▦" title="Nothing due right now" body="When a teacher publishes an assessment with a due date, it will appear here so you can plan ahead." />
+                    <EmptyState icon="▦" title={data.loadErrors.upcoming ? "Upcoming work couldn't be loaded" : "Nothing due right now"} body="When a teacher publishes an assessment with a due date, it will appear here so you can plan ahead." loadError={data.loadErrors.upcoming} />
                   ) : (
                     <ul className="space-y-3">{data.upcoming.map((item) => <UpcomingCard key={item.id} item={item} />)}</ul>
                   )}
@@ -515,7 +517,7 @@ export default function StudentDashboard({
               {section === "teachers" && (
                 <div className="mt-6">
                   {data.teachers.length === 0 ? (
-                    <EmptyState icon="♧" title="No teachers assigned yet" body="Once an administrator assigns a teacher to your subject, they will be listed here." />
+                    <EmptyState icon="♧" title={data.loadErrors.teachers ? "Teachers couldn't be loaded" : "No teachers assigned yet"} body="Once an administrator assigns a teacher to your subject, they will be listed here." loadError={data.loadErrors.teachers} />
                   ) : (
                     <ul className="grid gap-3 sm:grid-cols-2">
                       {data.teachers.map((t) => (
@@ -535,7 +537,7 @@ export default function StudentDashboard({
               {section === "reports" && (
                 <div className="mt-6">
                   {data.reports.length === 0 ? (
-                    <EmptyState icon="▤" title="No reports yet" body="When a teacher publishes a learning report for you, you will find it here." />
+                    <EmptyState icon="▤" title={data.loadErrors.reports ? "Reports couldn't be loaded" : "No reports yet"} body="When a teacher publishes a learning report for you, you will find it here." loadError={data.loadErrors.reports} />
                   ) : (
                     <ul className="space-y-3">{data.reports.map((r) => <ReportCard key={r.id} report={r} />)}</ul>
                   )}
@@ -562,15 +564,18 @@ export default function StudentDashboard({
                       <EmptyState
                         icon="▥"
                         title={
-                          section === "materials"
-                            ? "No study materials yet"
-                            : "No past papers yet"
+                          data.loadErrors.resources
+                            ? "Learning resources couldn't be loaded"
+                            : section === "materials"
+                              ? "No study materials yet"
+                              : "No past papers yet"
                         }
                         body={
                           section === "materials"
                             ? "Published notes and revision guides will appear here when they are available."
                             : "Published past papers will appear here when they are available."
                         }
+                        loadError={data.loadErrors.resources}
                       />
                     ) : (
                       <div className="grid gap-4 sm:grid-cols-2">
