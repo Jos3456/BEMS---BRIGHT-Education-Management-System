@@ -154,6 +154,16 @@ export default async function DashboardPage() {
               <a href="/dashboard/teacher-application" className="mt-3 inline-flex rounded-xl bg-[#174a8b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#123d75]">Complete application</a>
             </div>
           )}
+          {role === "teacher_applicant" && teacherApplication && teacherApplication.status !== "draft" && (
+            <div className="mt-5 rounded-xl border border-[#dbe8fa] bg-[#eef5ff] p-4">
+              <p className="font-semibold text-[#174a8b]">Teacher application status</p>
+              <p className="mt-1 text-sm leading-6 text-[#47627f]">
+                Your application is currently {teacherApplication.status.replaceAll("_", " ")}.
+                {teacherApplication.status === "rejected" ? " Review the administrator's feedback and next steps." : ""}
+              </p>
+              <a href="/dashboard/teacher-application" className="mt-3 inline-flex rounded-xl bg-[#174a8b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#123d75]">View application</a>
+            </div>
+          )}
           {role === "teacher" && (
             <a href="/dashboard/teacher" className="mt-5 inline-flex rounded-xl bg-[#174a8b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#123d75]">
               Open teacher assessment tools

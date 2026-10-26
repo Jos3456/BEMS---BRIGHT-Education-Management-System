@@ -1,16 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { reviewTeacherApplication } from "./actions";
+import {
+  reopenTeacherApplication,
+  reviewTeacherApplication,
+} from "./actions";
 
 type ApplicationReviewActionsProps = {
   applicationId: string;
+  status: string;
 };
 
 export default function ApplicationReviewActions({
   applicationId,
+  status,
 }: ApplicationReviewActionsProps) {
   const [notes, setNotes] = useState("");
+
+  if (status === "rejected") {
+    return (
+      <form
+        action={reopenTeacherApplication}
+        onSubmit={(event) => {
+          if (!window.confirm(
+            "Reopen this rejected application as a draft? The applicant will be able to edit and resubmit it, but will not receive teacher access until a new review is approved.",
+          )) event.preventDefault();
+        }}
+        className="mt-5 border-t border-[#e1eaf5] pt-4"
+      >
+        <input type="hidden" name="application_id" value={applicationId} />
+        <p className="text-sm leading-6 text-[#71849b]">
+          Reopening returns this application to the applicant as a draft. They must revise and resubmit it before another decision can be made.
+        </p>
+        <button
+          type="submit"
+          className="mt-3 rounded-xl border border-[#174a8b] px-4 py-2.5 text-sm font-semibold text-[#174a8b] transition hover:bg-[#edf4ff]"
+        >
+          Reopen for resubmission
+        </button>
+      </form>
+    );
+  }
+
+  if (!["submitted", "under_review", "additional_info_requested"].includes(status)) {
+    return null;
+  }
 
   return (
     <form
@@ -35,7 +69,6 @@ export default function ApplicationReviewActions({
       className="mt-5 border-t border-[#e1eaf5] pt-4"
     >
       <input type="hidden" name="application_id" value={applicationId} />
-
       <label
         htmlFor={`review-notes-${applicationId}`}
         className="block text-sm font-semibold"
@@ -52,7 +85,6 @@ export default function ApplicationReviewActions({
         placeholder="Add feedback or a reason for your decision…"
         className="mt-2 w-full rounded-xl border border-[#dce7f3] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#174a8b] focus:ring-2 focus:ring-[#174a8b]/10"
       />
-
       <div className="mt-3 flex flex-wrap gap-3">
         <button
           type="submit"
