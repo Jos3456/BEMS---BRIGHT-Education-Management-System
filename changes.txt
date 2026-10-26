@@ -5,9 +5,10 @@
  - IGCSE General
  - Kenyan CBC
  - University Level
+ - IB
  - American System
  - we'll add more
-3. Same witrh the grade - we'll add
+3. Same with the grade - we'll add
  - Grade 1
  - Grade 2
 - etc for all grades available in our system's curriculums
