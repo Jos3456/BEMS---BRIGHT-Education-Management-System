@@ -8,6 +8,13 @@ create policy "Teachers read assigned learner profiles"
   using (
     is_active_user()
     and has_role('teacher'::app_role)
+    and profiles.account_status = 'active'
+    and exists (
+      select 1
+      from public.user_roles learner_role
+      where learner_role.user_id = profiles.id
+        and learner_role.role = 'student'::app_role
+    )
     and exists (
       select 1
       from public.teacher_learner_assignments tla
