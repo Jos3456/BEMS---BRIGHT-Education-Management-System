@@ -269,29 +269,22 @@ export async function loadStudentData(
     maxScore: Number(row.max_score),
   }));
 
-  // Teacher names live in profiles.
-  const teacherIds = Array.from(
-    new Set(
-      (assignmentsRes.data ?? []).map(
-        (row) => row.teacher_id as string,
-      ),
-    ),
-  );
-
+  // Profile RLS intentionally hides other users' profile rows from learners.
+  // Use a narrowly scoped RPC that returns only names for this learner's active
+  // teacher assignments instead of broadening access to the profiles table.
   const names = new Map<string, string>();
 
-  if (teacherIds.length > 0) {
-    const { data, error: teacherProfilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", teacherIds);
+  if ((assignmentsRes.data ?? []).length > 0) {
+    const { data, error: teacherProfilesError } = await supabase.rpc(
+      "student_assigned_teacher_names",
+    );
 
     if (teacherProfilesError) {
       loadFailed = true;
     } else {
       for (const profile of data ?? []) {
         if (profile.full_name) {
-          names.set(profile.id, profile.full_name);
+          names.set(profile.teacher_id, profile.full_name);
         }
       }
     }
