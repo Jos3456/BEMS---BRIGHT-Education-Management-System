@@ -275,8 +275,9 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
             </section>
 
             <section className="rounded-2xl border border-[#dbe8fa] bg-[#eef5ff] p-5 sm:p-6">
-              <h2 className="font-semibold text-[#174a8b]">Next: enter learner marks</h2>
-              <p className="mt-2 text-sm leading-6 text-[#47627f]">Marks entry will be enabled after an administrator assigns learners to your subject or course. This keeps each teacher limited to the learners they are responsible for.</p>
+              <h2 className="font-semibold text-[#174a8b]">Enter learner marks</h2>
+              <p className="mt-2 text-sm leading-6 text-[#47627f]">Open marks entry to record draft scores and feedback for learners actively assigned to your subject or course. Drafts remain hidden from learners.</p>
+              <a href="/dashboard/teacher/marks" className="mt-4 inline-flex rounded-xl bg-[#174a8b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#123b70]">Open marks entry</a>
             </section>
           </div>
         </div>
