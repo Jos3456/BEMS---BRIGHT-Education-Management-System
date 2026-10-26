@@ -115,7 +115,7 @@ export async function loadStudentData(
       .limit(100),
   ]);
 
-  const loadFailed = Boolean(
+  let loadFailed = Boolean(
     resultsRes.error ||
       upcomingRes.error ||
       assignmentsRes.error ||
@@ -253,26 +253,24 @@ export async function loadStudentData(
     maxScore: Number(row.max_score),
   }));
 
-  // Teacher names live in profiles.
-  const teacherIds = Array.from(
-    new Set(
-      (assignmentsRes.data ?? []).map(
-        (row) => row.teacher_id as string,
-      ),
-    ),
-  );
-
+  // Profile RLS intentionally hides other users' profile rows from learners.
+  // Return only names belonging to this learner's active teacher assignments.
   const names = new Map<string, string>();
 
-  if (teacherIds.length > 0) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", teacherIds);
+  if ((assignmentsRes.data ?? []).length > 0) {
+    const { data: teacherNames, error: teacherNamesError } = await supabase.rpc(
+      "student_assigned_teacher_names",
+    );
 
-    for (const profile of data ?? []) {
-      if (profile.full_name) {
-        names.set(profile.id, profile.full_name);
+    if (teacherNamesError) {
+      // Keep the UI usable, but surface the failed load instead of silently
+      // pretending the generic fallback is the teacher's actual name.
+      loadFailed = true;
+    } else {
+      for (const teacher of teacherNames ?? []) {
+        if (teacher.full_name) {
+          names.set(teacher.teacher_id, teacher.full_name);
+        }
       }
     }
   }
