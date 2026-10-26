@@ -1,28 +1,38 @@
 -- Teacher marks-entry safeguards.
 -- Teachers may save/edit draft marks only. Publishing is intentionally a separate workflow.
--- Also allow teachers to read the minimum profile details of learners actively assigned to them.
+-- Return only active assigned learner IDs and names to the signed-in teacher.
+-- Do not grant direct SELECT access to all columns in public.profiles.
+CREATE OR REPLACE FUNCTION public.teacher_assigned_learner_names()
+RETURNS TABLE (learner_id uuid, full_name text)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+  SELECT p.id, p.full_name
+  FROM public.profiles AS p
+  WHERE p.account_status = 'active'
+    AND EXISTS (
+      SELECT 1
+      FROM public.user_roles AS learner_role
+      WHERE learner_role.user_id = p.id
+        AND learner_role.role = 'student'::public.app_role
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM public.teacher_learner_assignments AS tla
+      WHERE tla.teacher_id = (SELECT auth.uid())
+        AND tla.learner_id = p.id
+        AND tla.status = 'active'
+    )
+    AND public.is_active_user()
+    AND public.has_role('teacher'::public.app_role);
+$function$;
 
-drop policy if exists "Teachers read assigned learner profiles" on public.profiles;
-create policy "Teachers read assigned learner profiles"
-  on public.profiles for select to authenticated
-  using (
-    is_active_user()
-    and has_role('teacher'::app_role)
-    and profiles.account_status = 'active'
-    and exists (
-      select 1
-      from public.user_roles learner_role
-      where learner_role.user_id = profiles.id
-        and learner_role.role = 'student'::app_role
-    )
-    and exists (
-      select 1
-      from public.teacher_learner_assignments tla
-      where tla.teacher_id = auth.uid()
-        and tla.learner_id = profiles.id
-        and tla.status = 'active'
-    )
-  );
+REVOKE ALL ON FUNCTION public.teacher_assigned_learner_names()
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.teacher_assigned_learner_names()
+  TO authenticated;
 
 drop policy if exists "Teachers enter results for their own assessments" on public.assessment_results;
 create policy "Teachers enter draft results for their own assessments"
