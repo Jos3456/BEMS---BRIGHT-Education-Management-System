@@ -115,7 +115,7 @@ export async function loadStudentData(
       .limit(100),
   ]);
 
-  const loadFailed = Boolean(
+  let loadFailed = Boolean(
     resultsRes.error ||
       upcomingRes.error ||
       assignmentsRes.error ||
@@ -124,13 +124,15 @@ export async function loadStudentData(
   );
 
   // Generate temporary download links for files in the private storage bucket.
-  const resources: StudentResource[] = await Promise.all(
+  // A failed signing request should be visible as a loading warning, not silently
+  // presented as an empty or fully loaded library.
+  const resourceResults = await Promise.all(
     (resourcesRes.data ?? []).map(async (row) => {
-      const { data: signedData } = await supabase.storage
+      const { data: signedData, error: signedUrlError } = await supabase.storage
         .from("learning-resources")
         .createSignedUrl(row.file_path, 60 * 60);
 
-      return {
+      const resource: StudentResource = {
         id: row.id,
         title: row.title,
         category: row.category ?? "",
@@ -142,8 +144,15 @@ export async function loadStudentData(
         file_size: Number(row.file_size ?? 0),
         signedUrl: signedData?.signedUrl ?? null,
       };
+
+      return { resource, failed: Boolean(signedUrlError || !signedData?.signedUrl) };
     }),
   );
+
+  const resources = resourceResults.map(({ resource }) => resource);
+  if (resourceResults.some(({ failed }) => failed)) {
+    loadFailed = true;
+  }
 
   // Load admin-configured grading rules for assessments.
   const scaleIds = Array.from(
@@ -163,12 +172,16 @@ export async function loadStudentData(
   let rules: GradeRule[] = [];
 
   if (scaleIds.length > 0) {
-    const { data } = await supabase
+    const { data, error: gradeRulesError } = await supabase
       .from("grade_scale_rules")
       .select("grade_scale_id, grade_label, min_percentage")
       .in("grade_scale_id", scaleIds);
 
-    rules = (data ?? []) as GradeRule[];
+    if (gradeRulesError) {
+      loadFailed = true;
+    } else {
+      rules = (data ?? []) as GradeRule[];
+    }
   }
 
   const results: ResultRow[] = [];
