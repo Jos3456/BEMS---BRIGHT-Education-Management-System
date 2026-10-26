@@ -118,13 +118,14 @@ export async function loadStudentData(
       .limit(100),
   ]);
 
-  let loadFailed = Boolean(
-    resultsRes.error ||
-      upcomingRes.error ||
-      assignmentsRes.error ||
-      reportsRes.error ||
-      resourcesRes.error,
-  );
+  const loadErrors = {
+    results: Boolean(resultsRes.error),
+    upcoming: Boolean(upcomingRes.error),
+    teachers: Boolean(assignmentsRes.error),
+    reports: Boolean(reportsRes.error),
+    resources: Boolean(resourcesRes.error),
+  };
+  let loadFailed = Object.values(loadErrors).some(Boolean);
 
   // Generate temporary download links for files in the private storage bucket.
   // A failed signing request should be visible as a loading warning, not silently
@@ -154,6 +155,7 @@ export async function loadStudentData(
 
   const resources = resourceResults.map(({ resource }) => resource);
   if (resourceResults.some(({ failed }) => failed)) {
+    loadErrors.resources = true;
     loadFailed = true;
   }
 
@@ -181,6 +183,7 @@ export async function loadStudentData(
       .in("grade_scale_id", scaleIds);
 
     if (gradeRulesError) {
+      loadErrors.results = true;
       loadFailed = true;
     } else {
       rules = (data ?? []) as GradeRule[];
@@ -280,6 +283,7 @@ export async function loadStudentData(
     );
 
     if (teacherProfilesError) {
+      loadErrors.teachers = true;
       loadFailed = true;
     } else {
       for (const profile of data ?? []) {
@@ -319,5 +323,6 @@ export async function loadStudentData(
     reports,
     resources,
     loadFailed,
+    loadErrors,
   };
 }
