@@ -73,8 +73,11 @@ export default async function TeacherLearnerAssignmentsPage({
     teacherProfilesResponse.error || studentProfilesResponse.error,
   );
 
+  const failedCount = Number(params.failed ?? "0");
   const successMessage = params.saved === "1"
-    ? `Assignment update complete: ${params.assigned ?? "0"} new/reactivated and ${params.existing ?? "0"} already active.`
+    ? failedCount > 0
+      ? `Partial result: ${params.assigned ?? "0"} new/reactivated, ${params.existing ?? "0"} already active, and ${failedCount} failed. You can safely resubmit the same selection; active assignments will be skipped.`
+      : `Assignment update complete: ${params.assigned ?? "0"} new/reactivated and ${params.existing ?? "0"} already active.`
     : params.status === "revoked"
       ? "Assignment revoked. The teacher will no longer see this learner for that subject/course."
       : params.status === "reactivated"
@@ -105,7 +108,7 @@ export default async function TeacherLearnerAssignmentsPage({
           </a>
         </header>
 
-        {successMessage && <p role="status" className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{successMessage}</p>}
+        {successMessage && <p role="status" className={failedCount > 0 ? "mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" : "mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"}>{successMessage}</p>}
         {params.error && <p role="alert" className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{errorMessages[params.error] ?? "Something went wrong. Refresh and try again."}</p>}
 
         <section className="mt-8 rounded-2xl border border-[#e1eaf5] bg-white p-6 shadow-sm sm:p-7">
