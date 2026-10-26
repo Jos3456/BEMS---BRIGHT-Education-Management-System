@@ -99,6 +99,7 @@ export async function assignLearnersToTeacher(formData: FormData) {
 
   let assigned = 0;
   let alreadyActive = 0;
+  let failed = 0;
 
   for (const learnerId of learnerIds) {
     let existingQuery = supabase
@@ -113,7 +114,10 @@ export async function assignLearnersToTeacher(formData: FormData) {
       : existingQuery.is("course_name", null);
 
     const { data: existingRows, error: existingError } = await existingQuery.limit(1);
-    if (existingError) redirect("/dashboard/admin/assignments?error=save_failed");
+    if (existingError) {
+      failed += 1;
+      continue;
+    }
 
     const existing = existingRows?.[0];
     if (existing?.status === "active") {
@@ -127,7 +131,10 @@ export async function assignLearnersToTeacher(formData: FormData) {
         .update({ status: "active" })
         .eq("id", existing.id);
 
-      if (updateError) redirect("/dashboard/admin/assignments?error=save_failed");
+      if (updateError) {
+        failed += 1;
+        continue;
+      }
     } else {
       const { error: insertError } = await supabase
         .from("teacher_learner_assignments")
@@ -140,7 +147,10 @@ export async function assignLearnersToTeacher(formData: FormData) {
           created_by: user.id,
         });
 
-      if (insertError) redirect("/dashboard/admin/assignments?error=save_failed");
+      if (insertError) {
+        failed += 1;
+        continue;
+      }
     }
 
     assigned += 1;
@@ -153,6 +163,7 @@ export async function assignLearnersToTeacher(formData: FormData) {
     saved: "1",
     assigned: String(assigned),
     existing: String(alreadyActive),
+    failed: String(failed),
   });
   redirect(`/dashboard/admin/assignments?${query.toString()}`);
 }
