@@ -75,6 +75,9 @@ export async function loadStudentData(
       })
       .limit(200),
 
+    // Row-level security limits this query to assessments matching this learner's
+    // active teacher assignments. Keep the query broad enough for Supabase to apply
+    // those policies; never replace RLS with client-only filtering.
     supabase
       .from("learning_assessments")
       .select(
@@ -115,22 +118,25 @@ export async function loadStudentData(
       .limit(100),
   ]);
 
-  const loadFailed = Boolean(
-    resultsRes.error ||
-      upcomingRes.error ||
-      assignmentsRes.error ||
-      reportsRes.error ||
-      resourcesRes.error,
-  );
+  const loadErrors = {
+    results: Boolean(resultsRes.error),
+    upcoming: Boolean(upcomingRes.error),
+    teachers: Boolean(assignmentsRes.error),
+    reports: Boolean(reportsRes.error),
+    resources: Boolean(resourcesRes.error),
+  };
+  let loadFailed = Object.values(loadErrors).some(Boolean);
 
   // Generate temporary download links for files in the private storage bucket.
-  const resources: StudentResource[] = await Promise.all(
+  // A failed signing request should be visible as a loading warning, not silently
+  // presented as an empty or fully loaded library.
+  const resourceResults = await Promise.all(
     (resourcesRes.data ?? []).map(async (row) => {
-      const { data: signedData } = await supabase.storage
+      const { data: signedData, error: signedUrlError } = await supabase.storage
         .from("learning-resources")
         .createSignedUrl(row.file_path, 60 * 60);
 
-      return {
+      const resource: StudentResource = {
         id: row.id,
         title: row.title,
         category: row.category ?? "",
@@ -142,8 +148,16 @@ export async function loadStudentData(
         file_size: Number(row.file_size ?? 0),
         signedUrl: signedData?.signedUrl ?? null,
       };
+
+      return { resource, failed: Boolean(signedUrlError || !signedData?.signedUrl) };
     }),
   );
+
+  const resources = resourceResults.map(({ resource }) => resource);
+  if (resourceResults.some(({ failed }) => failed)) {
+    loadErrors.resources = true;
+    loadFailed = true;
+  }
 
   // Load admin-configured grading rules for assessments.
   const scaleIds = Array.from(
@@ -163,12 +177,17 @@ export async function loadStudentData(
   let rules: GradeRule[] = [];
 
   if (scaleIds.length > 0) {
-    const { data } = await supabase
+    const { data, error: gradeRulesError } = await supabase
       .from("grade_scale_rules")
       .select("grade_scale_id, grade_label, min_percentage")
       .in("grade_scale_id", scaleIds);
 
-    rules = (data ?? []) as GradeRule[];
+    if (gradeRulesError) {
+      loadErrors.results = true;
+      loadFailed = true;
+    } else {
+      rules = (data ?? []) as GradeRule[];
+    }
   }
 
   const results: ResultRow[] = [];
@@ -253,26 +272,24 @@ export async function loadStudentData(
     maxScore: Number(row.max_score),
   }));
 
-  // Teacher names live in profiles.
-  const teacherIds = Array.from(
-    new Set(
-      (assignmentsRes.data ?? []).map(
-        (row) => row.teacher_id as string,
-      ),
-    ),
-  );
-
+  // Profile RLS intentionally hides other users' profile rows from learners.
+  // Use a narrowly scoped RPC that returns only names for this learner's active
+  // teacher assignments instead of broadening access to the profiles table.
   const names = new Map<string, string>();
 
-  if (teacherIds.length > 0) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", teacherIds);
+  if ((assignmentsRes.data ?? []).length > 0) {
+    const { data, error: teacherProfilesError } = await supabase.rpc(
+      "student_assigned_teacher_names",
+    );
 
-    for (const profile of data ?? []) {
-      if (profile.full_name) {
-        names.set(profile.id, profile.full_name);
+    if (teacherProfilesError) {
+      loadErrors.teachers = true;
+      loadFailed = true;
+    } else {
+      for (const profile of data ?? []) {
+        if (profile.full_name) {
+          names.set(profile.teacher_id, profile.full_name);
+        }
       }
     }
   }
@@ -306,5 +323,6 @@ export async function loadStudentData(
     reports,
     resources,
     loadFailed,
+    loadErrors,
   };
 }

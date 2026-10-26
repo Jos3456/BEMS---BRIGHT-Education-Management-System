@@ -196,7 +196,21 @@ export default async function AdminDashboardPage({
           ))}
         </section>
 
-                <UserManagement
+        <section className="mt-8 rounded-2xl border border-[#dbe8fa] bg-[#eef5ff] p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-[#174a8b]">Teacher–learner assignments</h2>
+              <p className="mt-1 text-sm leading-6 text-[#47627f]">
+                Assign active students to teachers by subject and course, and revoke or reactivate assignments.
+              </p>
+            </div>
+            <a href="/dashboard/admin/assignments" className="inline-flex rounded-xl bg-[#174a8b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#123d75]">
+              Manage assignments
+            </a>
+          </div>
+        </section>
+
+        <UserManagement
           users={managedUsers}
           loadError={!!userLoadError}
         />
