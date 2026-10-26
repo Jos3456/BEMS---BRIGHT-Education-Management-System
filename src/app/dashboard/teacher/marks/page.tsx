@@ -56,9 +56,11 @@ export default async function TeacherMarksPage({ searchParams }: { searchParams:
     const learnerIds = [...new Set(assignments.map((assignment) => assignment.learner_id))];
 
     if (learnerIds.length) {
-      const profileResponse = await supabase.from("profiles").select("id, full_name").in("id", learnerIds);
-      profilesError = Boolean(profileResponse.error);
+      const profileResponse = await supabase.from("profiles").select("id, full_name, account_status").in("id", learnerIds).eq("account_status", "active");
       learnerProfiles = (profileResponse.data ?? []) as LearnerProfile[];
+      profilesError = Boolean(profileResponse.error) || learnerProfiles.length < learnerIds.length;
+      const visibleLearnerIds = new Set(learnerProfiles.map((item) => item.id));
+      assignments = assignments.filter((assignment) => visibleLearnerIds.has(assignment.learner_id));
     }
 
     const resultResponse = await supabase.from("assessment_results")
