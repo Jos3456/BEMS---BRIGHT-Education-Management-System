@@ -54,6 +54,7 @@ create policy "Teachers enter draft results for their own assessments"
        and (tla.course_name is null or tla.course_name = a.course_name)
       where a.id = assessment_results.assessment_id
         and a.teacher_id = auth.uid()
+        and a.status <> 'closed'
         and (assessment_results.score is null or assessment_results.score <= a.max_score)
     )
   );
@@ -77,6 +78,7 @@ create policy "Teachers update draft results for their own assessments"
        and (tla.course_name is null or tla.course_name = a.course_name)
       where a.id = assessment_results.assessment_id
         and a.teacher_id = auth.uid()
+        and a.status <> 'closed'
     )
   )
   with check (
@@ -96,6 +98,7 @@ create policy "Teachers update draft results for their own assessments"
        and (tla.course_name is null or tla.course_name = a.course_name)
       where a.id = assessment_results.assessment_id
         and a.teacher_id = auth.uid()
+        and a.status <> 'closed'
         and (assessment_results.score is null or assessment_results.score <= a.max_score)
     )
   );
