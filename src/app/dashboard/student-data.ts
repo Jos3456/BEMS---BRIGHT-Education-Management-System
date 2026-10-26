@@ -281,14 +281,18 @@ export async function loadStudentData(
   const names = new Map<string, string>();
 
   if (teacherIds.length > 0) {
-    const { data } = await supabase
+    const { data, error: teacherProfilesError } = await supabase
       .from("profiles")
       .select("id, full_name")
       .in("id", teacherIds);
 
-    for (const profile of data ?? []) {
-      if (profile.full_name) {
-        names.set(profile.id, profile.full_name);
+    if (teacherProfilesError) {
+      loadFailed = true;
+    } else {
+      for (const profile of data ?? []) {
+        if (profile.full_name) {
+          names.set(profile.id, profile.full_name);
+        }
       }
     }
   }
