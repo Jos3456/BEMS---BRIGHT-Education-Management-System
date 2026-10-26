@@ -60,7 +60,7 @@ export default async function TeacherMarksPage({ searchParams }: { searchParams:
       learnerProfiles = ((profileResponse.data ?? []) as { learner_id: string; full_name: string | null }[])
         .filter((item) => learnerIds.includes(item.learner_id))
         .map((item) => ({ id: item.learner_id, full_name: item.full_name }));
-      profilesError = Boolean(profileResponse.error) || learnerProfiles.length < learnerIds.length;
+      profilesError = Boolean(profileResponse.error);
       const visibleLearnerIds = new Set(learnerProfiles.map((item) => item.id));
       assignments = assignments.filter((assignment) => visibleLearnerIds.has(assignment.learner_id));
     }
